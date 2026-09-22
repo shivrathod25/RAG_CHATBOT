@@ -300,8 +300,31 @@ def query_rag(request: QueryRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def free_port_if_occupied(port: int = 8000):
+    """Pre-flight check to detect and automatically release port if an orphaned process is listening on it."""
+    import socket, subprocess
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    is_busy = sock.connect_ex(('127.0.0.1', port)) == 0
+    sock.close()
+    
+    if is_busy:
+        print(f"[WARNING] Port {port} is currently occupied by another process. Attempting automatic cleanup...")
+        try:
+            if os.name == 'nt':
+                # Windows: Find and terminate process occupying target port
+                ps_cmd = f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object {{ Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }}"
+                subprocess.run(["powershell", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            else:
+                # Unix/Linux/macOS
+                subprocess.run(["fuser", "-k", f"{port}/tcp"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(1)
+            print(f"[SUCCESS] Port {port} successfully freed.")
+        except Exception as e:
+            print(f"[WARNING] Could not automatically free port {port}: {e}")
+
 if __name__ == "__main__":
     import uvicorn
+    free_port_if_occupied(8000)
     uvicorn.run(app, host="127.0.0.1", port=8000)
 
 
