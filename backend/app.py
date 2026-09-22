@@ -37,12 +37,15 @@ app.add_middleware(
 
 import time
 
+# Base directory (project root)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # Initialize Gemini LLM & Embedding Model
 FALLBACK_MODELS = [
-    "gemini-3.6-flash",
-    "gemini-3.5-flash-lite",
     "gemini-2.5-flash",
-    "gemini-2.5-flash-lite"
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro"
 ]
 
 def invoke_llm_with_fallback(prompt_text: str):
@@ -63,12 +66,12 @@ def invoke_llm_with_fallback(prompt_text: str):
     raise RuntimeError("All LLM fallback models failed.")
 
 embeddings = GoogleGenerativeAIEmbeddings(
-    model="models/gemini-embedding-001"
+    model="models/text-embedding-004"
 )
 
 # Vector DB & Knowledge Base Setup
 COLLECTION_NAME = "chroma_db"
-PERSIST_DIRECTORY = "./chroma_db"
+PERSIST_DIRECTORY = os.path.join(BASE_DIR, "chroma_db")
 PDF_FILES = ["ML.pdf", "HR_Policy.pdf", "IT_Security_Policy.pdf"]
 
 def initialize_vectorstore():
@@ -104,8 +107,9 @@ def initialize_vectorstore():
     print("Building new Chroma DB from PDF documents...")
     all_documents = []
     for pdf_file in PDF_FILES:
-        if os.path.exists(pdf_file):
-            loader = PyPDFLoader(pdf_file)
+        pdf_path = os.path.join(BASE_DIR, pdf_file)
+        if os.path.exists(pdf_path):
+            loader = PyPDFLoader(pdf_path)
             docs = loader.load()
             for doc in docs:
                 doc.metadata["source"] = pdf_file
@@ -262,7 +266,7 @@ def get_pdf(filename: str):
     """Serve PDF documents for frontend viewer/download."""
     if filename not in PDF_FILES:
         raise HTTPException(status_code=404, detail="PDF file not found in knowledge base.")
-    file_path = os.path.join(os.getcwd(), filename)
+    file_path = os.path.join(BASE_DIR, filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail=f"File '{filename}' does not exist on server.")
     return FileResponse(file_path, media_type="application/pdf", filename=filename)

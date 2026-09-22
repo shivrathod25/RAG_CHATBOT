@@ -6,9 +6,9 @@ STEP 1: RUN BACKEND (START FIRST)
    cd "e:\TOPS Classes\Agentic Ai\RAG\RAG_Chatbot"
 
 3. Run the backend command:
-   python app.py
+   python backend/app.py
 
-   -> Running `python app.py` starts ONLY the backend API server.
+   -> Running `python backend/app.py` starts ONLY the backend API server.
    -> It listens on: http://127.0.0.1:8000
    -> Terminal output will confirm:
       "INFO: Started server process"
