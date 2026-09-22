@@ -1,0 +1,28 @@
+==================================================
+STEP 1: RUN BACKEND (START FIRST)
+==================================================
+1. Open PowerShell / Terminal.
+2. Navigate to the project folder:
+   cd "e:\TOPS Classes\Agentic Ai\RAG\RAG_Chatbot"
+
+3. Run the backend command:
+   python app.py
+
+   -> Running `python app.py` starts ONLY the backend API server.
+   -> It listens on: http://127.0.0.1:8000
+   -> Terminal output will confirm:
+      "INFO: Started server process"
+      "INFO: Uvicorn running on http://127.0.0.1:8000"
+
+==================================================
+STEP 2: OPEN / RUN FRONTEND UI
+==================================================
+After the backend is running in the terminal:
+
+1. Open File Explorer and navigate to:
+   e:\TOPS Classes\Agentic Ai\RAG\RAG_Chatbot
+2. Double-click "index.html" to open the UI in your web browser (Chrome, Edge, Firefox).
+
+(Alternatively, in a second terminal window, run `python -m http.server 3000` and open `http://localhost:3000/index.html`).
+
+

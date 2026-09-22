@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enterprise RAG Knowledge Assistant</title>
+  <meta name="description"
+    content="AI-Powered Retrieval-Augmented Generation Chatbot for Enterprise Knowledge Base (HR, Security, and Machine Learning Policy Docs).">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Fira+Code:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <!-- Marked.js for Markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Highlight.js for Syntax Highlighting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/styles/github.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/lib/highlight.min.js"></script>
+
+  <style>
+    :root {
+      /* Palette: Modern Light Slate & Indigo Accent */
+      --bg-body: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-hover: #f1f5f9;
+      --bg-sidebar: #ffffff;
+      --bg-sidebar-alt: #f8fafc;
+      --bg-chat-user: #4f46e5;
+      --text-user: #ffffff;
+      --bg-chat-bot: #ffffff;
+      --border-color: #e2e8f0;
+      --border-subtle: #f1f5f9;
+
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #eef2ff;
+      --primary-border: #c7d2fe;
+
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-tertiary: #94a3b8;
+
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --warning: #f59e0b;
+      --warning-light: #fffbeb;
+      --danger: #ef4444;
+      --danger-light: #fef2f2;
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+
+      --transition-fast: 0.15s ease;
+      --transition-normal: 0.25s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* App Container Layout */
+    #app {
+      display: flex;
+      width: 100%;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* Sidebar Styling */
+    .sidebar {
+      width: 340px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      z-index: 20;
+      transition: transform var(--transition-normal);
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-surface);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--primary), #818cf8);
+      color: white;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    }
+
+    .brand-text h1 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .brand-text span {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      font-weight: 500;
+    }
+
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-tertiary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Knowledge Base Cards */
+    .kb-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .kb-card {
+      background: var(--bg-sidebar-alt);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .kb-card:hover {
+      border-color: var(--primary-border);
+      background: var(--primary-light);
+      transform: translateY(-1px);
+    }
+
+    .kb-icon {
+      font-size: 20px;
+      margin-top: 2px;
+    }
+
+    .kb-info {
+      flex: 1;
+    }
+
+    .kb-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .kb-meta {
+      font-size: 11px;
+      color: var(--text-secondary);
+      display: flex;
+      gap: 8px;
+    }
+
+    .kb-tag {
+      background: rgba(79, 70, 229, 0.08);
+      color: var(--primary);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 10px;
+    }
+
+    /* Suggested Prompts Pill List */
+    .prompt-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .prompt-chip {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      text-align: left;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .prompt-chip:hover {
+      background: var(--primary-light);
+      border-color: var(--primary-border);
+      color: var(--primary);
+    }
+
+    .prompt-chip svg {
+      opacity: 0.4;
+      transition: opacity var(--transition-fast);
+    }
+
+    .prompt-chip:hover svg {
+      opacity: 1;
+    }
+
+    /* Sidebar Footer */
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      background: var(--bg-sidebar-alt);
+      border: 1px solid var(--border-color);
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    .status-indicator.offline {
+      background: var(--warning);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+    }
+
+    .status-indicator.error {
+      background: var(--danger);
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+    }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-surface-hover);
+      color: var(--text-primary);
+      border-color: #cbd5e1;
+    }
+
+    /* Main Content Layout */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--bg-body);
+      position: relative;
+    }
+
+    /* Top Bar Header */
+    .chat-header {
+      height: 64px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-title-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .chat-header h2 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .chat-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .icon-btn:hover {
+      background: var(--bg-surface-hover);
+      color: var(--primary);
+      border-color: var(--primary-border);
+    }
+
+    /* Chat Messages Viewport */
+    .chat-viewport {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 20px;
+      scroll-behavior: smooth;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .messages-container {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Empty State Hero */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 20px;
+      margin: auto;
+      max-width: 600px;
+    }
+
+    .empty-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin-bottom: 20px;
+      border: 1px solid var(--primary-border);
+      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.12);
+    }
+
+    .empty-state h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .quick-start-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      width: 100%;
+    }
+
+    .quick-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .quick-card:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .quick-card-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: inline-block;
+    }
+
+    .quick-card p {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    /* Message Bubbles */
+    .message-wrapper {
+      display: flex;
+      gap: 14px;
+      width: 100%;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message-wrapper.user {
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .message-wrapper.user .avatar {
+      background: var(--bg-chat-user);
+      color: var(--text-user);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .message-wrapper.bot .avatar {
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+    }
+
+    .message-content {
+      max-width: 78%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .message-bubble {
+      padding: 14px 18px;
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      line-height: 1.6;
+      box-shadow: var(--shadow-sm);
+      word-break: break-word;
+    }
+
+    .message-wrapper.user .message-bubble {
+      background: var(--bg-chat-user);
+      color: var(--text-user);
+      border-top-right-radius: 4px;
+    }
+
+    .message-wrapper.bot .message-bubble {
+      background: var(--bg-chat-bot);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-top-left-radius: 4px;
+    }
+
+    /* Markdown Styling in Bot Message */
+    .message-bubble p {
+      margin-bottom: 10px;
+    }
+
+    .message-bubble p:last-child {
+      margin-bottom: 0;
+    }
+
+    .message-bubble ul,
+    .message-bubble ol {
+      margin-left: 20px;
+      margin-bottom: 10px;
+    }
+
+    .message-bubble li {
+      margin-bottom: 4px;
+    }
+
+    .message-bubble code {
+      font-family: 'Fira Code', monospace;
+      font-size: 12px;
+      background: rgba(0, 0, 0, 0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .message-wrapper.user .message-bubble code {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    .message-bubble pre {
+      background: #1e293b;
+      color: #f8fafc;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      margin: 12px 0;
+      position: relative;
+    }
+
+    .message-bubble pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      font-size: 13px;
+    }
+
+    /* Code Copy Button */
+    .code-copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #94a3b8;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background var(--transition-fast);
+    }
+
+    .code-copy-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    /* Citations Expander Card */
+    .citations-accordion {
+      margin-top: 6px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background: var(--bg-sidebar-alt);
+      overflow: hidden;
+    }
+
+    .citations-header {
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .citations-header:hover {
+      background: var(--bg-surface-hover);
+      color: var(--primary);
+    }
+
+    .citations-body {
+      display: none;
+      padding: 12px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .citation-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .citation-source {
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .citation-text {
+      font-style: italic;
+      line-height: 1.4;
+      color: var(--text-primary);
+    }
+
+    /* Message Actions bar */
+    .message-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--text-tertiary);
+      padding: 0 4px;
+    }
+
+    .action-link {
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color var(--transition-fast);
+      background: none;
+      border: none;
+      font-size: 11px;
+    }
+
+    .action-link:hover {
+      color: var(--primary);
+    }
+
+    /* Typing Loading Animation */
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 18px;
+    }
+
+    .typing-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: pulse 1.4s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(1) {
+      animation-delay: 0s;
+    }
+
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      80%,
+      100% {
+        transform: scale(0.6);
+        opacity: 0.4;
+      }
+
+      40% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Input Footer Toolbar */
+    .chat-input-area {
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      padding: 16px 24px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .input-box-wrapper {
+      width: 100%;
+      max-width: 860px;
+      background: var(--bg-body);
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .input-box-wrapper:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+      background: var(--bg-surface);
+    }
+
+    .chat-textarea {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--text-primary);
+      resize: none;
+      min-height: 24px;
+      max-height: 140px;
+      line-height: 1.5;
+    }
+
+    .chat-textarea::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    .input-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .input-hints {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-send {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all var(--transition-fast);
+      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+    }
+
+    .btn-send:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-send:disabled {
+      background: var(--text-tertiary);
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-fast);
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: var(--bg-surface);
+      width: 100%;
+      max-width: 480px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      transform: scale(0.95);
+      transition: transform var(--transition-fast);
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-header h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .modal-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      outline: none;
+      transition: border-color var(--transition-fast);
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      background: var(--bg-sidebar-alt);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Notification Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      color: white;
+      padding: 12px 18px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 100;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all var(--transition-normal);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Responsive Breakpoints */
+    @media (max-width: 900px) {
+      .sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        transform: translateX(-100%);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-icon">RAG</div>
+          <div class="brand-text">
+            <h1>RAG Chatbot</h1>
+            <span>Policy & ML Assistant</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-content">
+        <!-- Knowledge Base Section -->
+        <div>
+          <div class="section-title">
+            <span>Knowledge Base (3 PDFs)</span>
+          </div>
+          <div class="kb-list">
+            <div class="kb-card" onclick="openPdfViewer('HR_Policy.pdf')" title="Click to view HR Policy PDF">
+              <div class="kb-icon">📄</div>
+              <div class="kb-info">
+                <div class="kb-title">HR Policy Manual ↗</div>
+                <div class="kb-meta">
+                  <span class="kb-tag">14 Pages</span>
+                  <span>Leave & Benefits</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="kb-card" onclick="openPdfViewer('IT_Security_Policy.pdf')"
+              title="Click to view IT Security Policy PDF">
+              <div class="kb-icon">🛡️</div>
+              <div class="kb-info">
+                <div class="kb-title">IT Security Policy ↗</div>
+                <div class="kb-meta">
+                  <span class="kb-tag">17 Pages</span>
+                  <span>Security & Access</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="kb-card" onclick="openPdfViewer('ML.pdf')" title="Click to view Machine Learning Notes PDF">
+              <div class="kb-icon">🤖</div>
+              <div class="kb-info">
+                <div class="kb-title">ML Fundamentals ↗</div>
+                <div class="kb-meta">
+                  <span class="kb-tag">9 Pages</span>
+                  <span>AI & Algorithms</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample Questions Section -->
+        <div>
+          <div class="section-title">Suggested Prompts (English & Hinglish)</div>
+          <div class="prompt-list">
+            <button class="prompt-chip" onclick="insertPrompt('Machine Learning kya hai?')">
+              <span>Machine Learning kya hai?</span>
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            <button class="prompt-chip" onclick="insertPrompt('Unsupervised learning kaise kaam karta hai?')">
+              <span>Unsupervised learning kaise kaam karta hai?</span>
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            <button class="prompt-chip" onclick="insertPrompt('What are the rules regarding password security?')">
+              <span>Password security rules</span>
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            <button class="prompt-chip" onclick="insertPrompt('HR Policy mein leave entitlement kya hai?')">
+              <span>HR leave entitlements (Hinglish)</span>
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Chat Area -->
+    <main class="main-content">
+      <!-- Top Bar Header -->
+      <header class="chat-header">
+        <div class="header-title-container">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <h2>RAG Chatbot</h2>
+        </div>
+
+        <div class="chat-header-actions">
+          <button class="icon-btn" title="Export Chat History" onclick="exportChatHistory()">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </button>
+          <button class="icon-btn" title="Clear Chat" onclick="clearChat()">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Viewport Messages Container -->
+      <div class="chat-viewport" id="chatViewport">
+        <div class="messages-container" id="messagesContainer">
+          <!-- Empty State Hero (Hidden when messages exist) -->
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">💡</div>
+            <h3>How can I assist you today?</h3>
+            <p>Ask questions directly from your organizational knowledge base, covering<strong>HR Policy</strong>,
+              <strong>IT Security Policy</strong>, and <strong>Machine
+                Learning Fundamentals</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Input Area -->
+      <footer class="chat-input-area">
+        <div class="input-box-wrapper">
+          <textarea id="chatInput" class="chat-textarea"
+            placeholder="Ask a question about HR, Security, or ML documents..." rows="1"
+            onkeydown="handleKeyDown(event)" oninput="autoResizeTextarea(this)"></textarea>
+
+          <div class="input-toolbar">
+            <div class="input-hints">
+              <span>Press <strong>Enter</strong> to send</span>
+              <span>•</span>
+              <span><strong>Shift + Enter</strong> for line break</span>
+            </div>
+            <button class="btn-send" id="sendBtn" onclick="sendMessage()">
+              <span>Send</span>
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Backend Integration Settings</h3>
+        <button class="icon-btn" onclick="closeSettingsModal()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="apiUrlInput">FastAPI Endpoint URL</label>
+          <input type="text" id="apiUrlInput" class="form-control" value="http://localhost:8000/api/chat">
+          <span style="font-size: 11px; color: var(--text-tertiary);">Specify your running Python backend URL (from
+            app.py).</span>
+        </div>
+
+        <div class="form-group">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="mockModeToggle" style="accent-color: var(--primary);">
+            <span>Enable Offline Demo / Simulation Mode</span>
+          </label>
+          <span style="font-size: 11px; color: var(--text-tertiary);">Simulates RAG responses when live FastAPI server
+            is unavailable.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" style="width:auto;" onclick="testApiConnection()">Test Connection</button>
+        <button class="btn-send" style="width:auto;" onclick="saveSettings()">Save & Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <span id="toastMsg">Action completed successfully</span>
+  </div>
+
+  <!-- Frontend JavaScript Logic -->
+  <script>
+    // State Container
+    const state = {
+      apiUrl: localStorage.getItem('rag_api_url') || 'http://127.0.0.1:8000/api/chat',
+      useMock: localStorage.getItem('rag_use_mock') === 'true',
+      isConnected: false,
+      messages: [],
+      isGenerating: false
+    };
+
+    // DOM References
+    const chatInput = document.getElementById('chatInput');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const emptyState = document.getElementById('emptyState');
+    const chatViewport = document.getElementById('chatViewport');
+    const sendBtn = document.getElementById('sendBtn');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const settingsModal = document.getElementById('settingsModal');
+    const apiUrlInput = document.getElementById('apiUrlInput');
+    const mockModeToggle = document.getElementById('mockModeToggle');
+
+    // Initializer
+    window.addEventListener('DOMContentLoaded', () => {
+      apiUrlInput.value = state.apiUrl;
+      mockModeToggle.checked = state.useMock;
+      checkBackendHealth();
+    });
+
+    // Toggle Mobile Sidebar
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // Auto-resize textarea
+    function autoResizeTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+    }
+
+    // Insert prompt from cards
+    function insertPrompt(text) {
+      chatInput.value = text;
+      autoResizeTextarea(chatInput);
+      chatInput.focus();
+    }
+
+    // Handle Enter Key Press
+    function handleKeyDown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+
+    // Check Backend Connection Status
+    async function checkBackendHealth() {
+      if (state.useMock) {
+        updateStatus(true, 'Mock Simulation Mode');
+        return;
+      }
+      try {
+        const healthUrl = state.apiUrl.replace('/api/chat', '/api/health');
+        const res = await fetch(healthUrl, { method: 'GET', headers: { 'Accept': 'application/json' } });
+        if (res.ok) {
+          updateStatus(true, 'FastAPI Live Backend');
+        } else {
+          updateStatus(false, 'FastAPI Connection Error');
+        }
+      } catch (err) {
+        // Fallback status
+        if (!state.useMock) {
+          updateStatus(false, 'Backend Offline (Mock Available)');
+        }
+      }
+    }
+
+    function updateStatus(online, label) {
+      state.isConnected = online;
+      statusText.innerText = label;
+      if (online) {
+        statusDot.className = 'status-indicator';
+      } else {
+        statusDot.className = 'status-indicator offline';
+      }
+    }
+
+    // Settings Modal Handlers
+    function openSettingsModal() {
+      apiUrlInput.value = state.apiUrl;
+      mockModeToggle.checked = state.useMock;
+      settingsModal.classList.add('active');
+    }
+
+    function closeSettingsModal() {
+      settingsModal.classList.remove('active');
+    }
+
+    function saveSettings() {
+      state.apiUrl = apiUrlInput.value.trim();
+      state.useMock = mockModeToggle.checked;
+      localStorage.setItem('rag_api_url', state.apiUrl);
+      localStorage.setItem('rag_use_mock', state.useMock);
+      closeSettingsModal();
+      showToast('Settings saved successfully');
+      checkBackendHealth();
+    }
+
+    async function testApiConnection() {
+      const url = apiUrlInput.value.trim().replace('/api/chat', '/api/health');
+      try {
+        showToast('Connecting to ' + url + '...');
+        const res = await fetch(url);
+        if (res.ok) {
+          showToast('Connection Successful!');
+        } else {
+          showToast('Server returned error status: ' + res.status);
+        }
+      } catch (e) {
+        showToast('Failed to connect to backend server');
+      }
+    }
+
+    // Toast Utility
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // Clear Chat
+    function clearChat() {
+      state.messages = [];
+      messagesContainer.innerHTML = '';
+      messagesContainer.appendChild(emptyState);
+      emptyState.style.display = 'flex';
+      showToast('Chat cleared');
+    }
+
+    // Export Chat History
+    function exportChatHistory() {
+      if (state.messages.length === 0) {
+        showToast('No message history to export');
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.messages, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "rag_chat_history.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('Exported chat history');
+    }
+
+    // Send Message Workflow
+    async function sendMessage() {
+      const query = chatInput.value.trim();
+      if (!query || state.isGenerating) return;
+
+      // Hide Empty State
+      emptyState.style.display = 'none';
+
+      // Add User Message
+      appendUserMessage(query);
+      chatInput.value = '';
+      autoResizeTextarea(chatInput);
+
+      // Add Bot Typing Indicator
+      state.isGenerating = true;
+      sendBtn.disabled = true;
+      const typingEl = appendTypingIndicator();
+
+      scrollToBottom();
+
+      try {
+        let answerText = "";
+        let sources = [];
+
+        if (state.useMock || !state.isConnected) {
+          // Simulated RAG Delay & Intelligent Offline Response
+          await new Promise(r => setTimeout(r, 1200));
+          const mockResult = generateMockResponse(query);
+          answerText = mockResult.answer;
+          sources = mockResult.documents;
+        } else {
+          // Live API Request to FastAPI backend
+          const res = await fetch(state.apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: query })
+          });
+
+          if (!res.ok) {
+            throw new Error(`Server returned HTTP ${res.status}`);
+          }
+
+          const data = await res.json();
+          answerText = data.answer || "No response generated.";
+          sources = data.documents || [];
+        }
+
+        // Replace typing indicator with actual bot message
+        typingEl.remove();
+        appendBotMessage(answerText, sources);
+
+      } catch (err) {
+        typingEl.remove();
+        appendBotMessage(`**Connection Warning**: Could not reach backend server (${err.message}). \n\n*Tip: You can enable Offline Demo Mode in API Settings to test the interface locally!*`, []);
+      } finally {
+        state.isGenerating = false;
+        sendBtn.disabled = false;
+        scrollToBottom();
+      }
+    }
+
+    // Append User Message Bubble
+    function appendUserMessage(text) {
+      state.messages.push({ role: 'user', content: text, timestamp: new Date() });
+
+      const msgWrapper = document.createElement('div');
+      msgWrapper.className = 'message-wrapper user';
+      msgWrapper.innerHTML = `
+        <div class="avatar">U</div>
+        <div class="message-content">
+          <div class="message-bubble">${escapeHtml(text)}</div>
+        </div>
+      `;
+      messagesContainer.appendChild(msgWrapper);
+    }
+
+    // Append Bot Message Bubble
+    function appendBotMessage(markdownText, documents = []) {
+      state.messages.push({ role: 'bot', content: markdownText, documents, timestamp: new Date() });
+
+      const msgWrapper = document.createElement('div');
+      msgWrapper.className = 'message-wrapper bot';
+
+      const parsedHtml = marked.parse(markdownText);
+
+      msgWrapper.innerHTML = `
+        <div class="avatar">AI</div>
+        <div class="message-content">
+          <div class="message-bubble">${parsedHtml}</div>
+          <div class="message-actions">
+            <button class="action-link" onclick="copyMessageText(this, \`${escapeJsString(markdownText)}\`)">
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+              Copy
+            </button>
+            <span>•</span>
+          </div>
+        </div>
+      `;
+
+      messagesContainer.appendChild(msgWrapper);
+
+      // Highlight Code Blocks if present
+      msgWrapper.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightElement(block);
+      });
+    }
+
+
+
+    // Typing Indicator
+    function appendTypingIndicator() {
+      const typingWrapper = document.createElement('div');
+      typingWrapper.className = 'message-wrapper bot';
+      typingWrapper.id = 'typingIndicator';
+      typingWrapper.innerHTML = `
+        <div class="avatar">AI</div>
+        <div class="message-content">
+          <div class="message-bubble typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      `;
+      messagesContainer.appendChild(typingWrapper);
+      return typingWrapper;
+    }
+
+    // Scroll to bottom helper
+    function scrollToBottom() {
+      chatViewport.scrollTop = chatViewport.scrollHeight;
+    }
+
+    // Utilities
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function escapeJsString(str) {
+      return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+    }
+
+    function copyMessageText(btnEl, text) {
+      navigator.clipboard.writeText(text);
+      showToast('Copied to clipboard!');
+    }
+
+    function copyMessageText(btnEl, text) {
+      navigator.clipboard.writeText(text);
+      showToast('Copied to clipboard!');
+    }
+
+    // Open PDF Viewer in new browser tab
+    function openPdfViewer(filename) {
+      let backendBaseUrl = 'http://localhost:8000';
+      if (state.apiUrl) {
+        backendBaseUrl = state.apiUrl.replace('/api/chat', '');
+      }
+      const pdfUrl = `${backendBaseUrl}/pdfs/${filename}`;
+      showToast(`Opening ${filename}...`);
+      window.open(pdfUrl, '_blank');
+    }
+
+    // Intelligent Mock Response Engine for Standalone Demo
+    function generateMockResponse(query) {
+      const lower = query.trim().toLowerCase();
+
+      // Greetings & Conversational Queries
+      if (lower === 'hi' || lower === 'hello' || lower === 'hey' || lower.includes('how are you') || lower.includes('who are you') || lower.includes('good morning')) {
+        return {
+          answer: `Hello! 👋 I am your Enterprise RAG Knowledge Assistant. How can I help you today? You can ask me questions about **HR Leave & Benefits**, **IT Security Policies**, or **Machine Learning Fundamentals**.`,
+          documents: []
+        };
+      }
+
+      // Unsupervised Learning / Hinglish Unsupervised query
+      if (lower.includes('unsupervised') || lower.includes('clustering') || lower.includes('k-means')) {
+        return {
+          answer: `**Short Introduction:**\nML documentation ke aadhar par, yahan unsupervised learning ka detail diya gaya hai.\n\n**Main Answer:**\nUnsupervised learning machine learning ki ek category hai jisme model ko bina kisi labeled target output ke unlabeled dataset par train kiya jata hai. Model Data mein hidden patterns, groupings, aur structures explore aur extract karta hai.\n\n**Important Points:**\n* **Unlabeled Data:** Data mein koi predefined target labels nahi hote.\n* **Common Techniques:** Clustering (e.g. K-Means, Hierarchical) aur Dimensionality Reduction (e.g. PCA).\n* **Primary Goal:** Data ke andar inherent patterns aur relationships find karna.`,
+          documents: [
+            { metadata: { source: 'ML.pdf', page: 2 }, page_content: 'Types of Machine Learning: A. Supervised Learning B. Unsupervised Learning C. Reinforcement Learning' }
+          ]
+        };
+      }
+
+      // Supervised Learning
+      if (lower.includes('supervised')) {
+        return {
+          answer: `**Short Introduction:**\nBased on the ML Fundamentals PDF, here is the explanation of Supervised Learning.\n\n**Main Answer:**\nSupervised learning is a type of machine learning where the training data contains both input features and a known target/output (labeled data).\n\n**Important Points:**\n* **Labeled Data:** Requires target labels for training.\n* **Common Algorithms:** Linear Regression, Logistic Regression, Decision Trees, Random Forest, SVM, and KNN.\n* **Tasks:** Classification and Regression.`,
+          documents: [
+            { metadata: { source: 'ML.pdf', page: 2 }, page_content: 'Supervised learning: The training data includes both input features and a known target or output (labeled data).' }
+          ]
+        };
+      }
+
+      // General ML / Hinglish ML Query ("Machine Learning kya hai?")
+      if (lower.includes('machine learning') || lower.includes('ml kya hai') || lower.includes('what is ml')) {
+        return {
+          answer: `**Short Introduction:**\nML Notes ke aadhar par, Machine Learning ki definition aur core concepts yeh hain:\n\n**Main Answer:**\nMachine Learning Artificial Intelligence (AI) ki ek branch hai jisme computer data se patterns seekhta hai aur predictions ya decisions leta hai, bina har case ke liye explicitly program kiye.\n\n**Important Points:**\n* **Definition:** Data -> Learning/Training -> Model -> Prediction/Decision.\n* **3 Main Types:** Supervised Learning, Unsupervised Learning, aur Reinforcement Learning.\n* **Workflow:** Data Collection, Data Cleaning, EDA, Feature Engineering, Model Training, & Deployment.`,
+          documents: [
+            { metadata: { source: 'ML.pdf', page: 2 }, page_content: 'Machine Learning is a branch of Artificial Intelligence in which a computer learns patterns from data and uses those patterns to make predictions or decisions...' }
+          ]
+        };
+      }
+
+      // Password / Security
+      if (lower.includes('password') || lower.includes('security') || lower.includes('it policy')) {
+        return {
+          answer: `**Short Introduction:**\nAccording to the IT Security Policy document, the following guidelines govern credential safety.\n\n**Main Answer:**\nAll corporate users must maintain strong password hygiene across enterprise credentials to safeguard company assets.\n\n**Important Points:**\n* Minimum length of **12 characters** combining upper, lower, numbers, and special symbols.\n* Passwords must be updated every **90 days**.\n* Multi-Factor Authentication (MFA) is strictly mandatory for remote logins.`,
+          documents: [
+            { metadata: { source: 'IT_Security_Policy.pdf', page: 5 }, page_content: 'Section 4.2 Password Governance: Passwords must be a minimum of 12 characters and changed every quarter.' }
+          ]
+        };
+      }
+
+      // Leave / HR Policy
+      if (lower.includes('leave') || lower.includes('hr') || lower.includes('vacation') || lower.includes('sick')) {
+        return {
+          answer: `**Short Introduction:**\nHR Policy manual ke aadhar par employee leave details below hain:\n\n**Main Answer:**\nFull-time employees ko annual paid leave, sick leave, aur parental leave entitlements milte hain.\n\n**Important Points:**\n* **Paid Annual Leave:** 20 working days per calendar year.\n* **Sick Leave:** 10 days of fully paid medical leave.\n* **Parental Leave:** 16 weeks for primary caregivers; 4 weeks for secondary caregivers.`,
+          documents: [
+            { metadata: { source: 'HR_Policy.pdf', page: 4 }, page_content: 'Section 4.2 Sick Leave & Section 4.3 Parental Leave entitlement.' }
+          ]
+        };
+      }
+
+      // Fallback for information NOT present in PDFs
+      return {
+        answer: `The requested information could not be found in the provided documents.`,
+        documents: []
+      };
+    }
+  </script>
+</body>
+
+</html>
