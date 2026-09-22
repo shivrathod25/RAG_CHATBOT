@@ -42,10 +42,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Initialize Gemini LLM & Embedding Model
 FALLBACK_MODELS = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro"
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-flash-latest"
 ]
 
 def invoke_llm_with_fallback(prompt_text: str):
@@ -66,7 +66,7 @@ def invoke_llm_with_fallback(prompt_text: str):
     raise RuntimeError("All LLM fallback models failed.")
 
 embeddings = GoogleGenerativeAIEmbeddings(
-    model="models/text-embedding-004"
+    model="models/gemini-embedding-001"
 )
 
 # Vector DB & Knowledge Base Setup
@@ -141,21 +141,38 @@ class GraphState(TypedDict):
 
 def retrieve_node(state: GraphState):
     question = state["question"]
-    # Fast direct retrieval from Chroma Vector Store
+    
+    # 1. Primary vector search
     documents = retriever.invoke(question)
     
-    # If initial retrieval returns few docs and query looks Hinglish, perform quick keyword lookup
-    if len(documents) < 3:
-        # Fast local term replacement for common Hinglish phrases for retrieval fallback
-        cleaned_query = question.lower()
-        for phrase in ["kya hai", "kaise kaam karta hai", "kaise hota hai", "kya hota hai", "batao", "bataiye"]:
-            cleaned_query = cleaned_query.replace(phrase, "").strip()
-        if cleaned_query and cleaned_query != question.lower():
-            extra_docs = retriever.invoke(cleaned_query)
-            existing_contents = {doc.page_content for doc in documents}
+    # 2. Query Expansion for abbreviations and Hinglish terms
+    expanded_queries = []
+    lower_q = question.lower()
+    
+    # Abbreviation expansion
+    if "ml" in lower_q.split() or "ml" in lower_q:
+        expanded_queries.append(lower_q.replace("ml", "machine learning"))
+    if "hr" in lower_q.split():
+        expanded_queries.append(lower_q.replace("hr", "human resources"))
+    if "it" in lower_q.split():
+        expanded_queries.append(lower_q.replace("it", "information technology"))
+        
+    # Hinglish query cleanup
+    cleaned_query = lower_q
+    for phrase in ["kya hai", "kaise kaam karta hai", "kaise hota hai", "kya hota hai", "batao", "bataiye"]:
+        cleaned_query = cleaned_query.replace(phrase, "").strip()
+    if cleaned_query and cleaned_query != lower_q:
+        expanded_queries.append(cleaned_query)
+
+    # Execute expanded queries if needed to supplement documents
+    existing_contents = {doc.page_content for doc in documents}
+    for eq in expanded_queries:
+        if eq and eq != lower_q:
+            extra_docs = retriever.invoke(eq)
             for doc in extra_docs:
                 if doc.page_content not in existing_contents:
                     documents.append(doc)
+                    existing_contents.add(doc.page_content)
 
     return {"documents": documents}
 
