@@ -43,7 +43,7 @@ if hasattr(sys.stderr, "reconfigure"):
 app = FastAPI(
     title="Enterprise RAG Chatbot API",
     description="High-performance RAG Backend API powered by LangGraph, Chroma DB, and Google Gemini",
-    version="1.1.0"
+    version="1.2.0"
 )
 
 # Configure CORS for Frontend Integration
@@ -60,15 +60,14 @@ frontend_dir = os.path.join(BASE_DIR, "frontend")
 if os.path.exists(frontend_dir):
     app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
-# Valid, ultra-fast Gemini Production Models (Ordered by speed & reliability)
+# Active Google Gemini Models supported by Google API
 FALLBACK_MODELS = [
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-2.0-flash-lite",
-    "gemini-1.5-flash-8b"
+    "gemini-3.6-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.5-flash"
 ]
 
-# Persistent LLM client cache to eliminate re-instantiation latency
+# Persistent LLM client cache
 _llm_cache: Dict[str, ChatGoogleGenerativeAI] = {}
 
 def get_llm_client(model_name: str) -> ChatGoogleGenerativeAI:
@@ -76,14 +75,13 @@ def get_llm_client(model_name: str) -> ChatGoogleGenerativeAI:
     if model_name not in _llm_cache:
         _llm_cache[model_name] = ChatGoogleGenerativeAI(
             model=model_name,
-            temperature=0.1,
             max_retries=1,
-            timeout=12
+            timeout=15
         )
     return _llm_cache[model_name]
 
 def invoke_llm_with_fallback(prompt_text: str):
-    """Invoke Gemini LLM with instant cached instances and automatic fallback."""
+    """Invoke Gemini LLM with automatic fallback across active 3.x models."""
     last_error = None
     for model_name in FALLBACK_MODELS:
         try:
@@ -92,7 +90,7 @@ def invoke_llm_with_fallback(prompt_text: str):
         except Exception as e:
             last_error = e
             err_msg = str(e).encode('ascii', 'backslashreplace').decode('ascii')
-            print(f"[WARNING] Model '{model_name}' temporary notice: {err_msg}. Trying next fallback...")
+            print(f"[WARN] Model '{model_name}' temporary notice: {err_msg}. Retrying fallback...")
             continue
     if last_error is not None:
         raise last_error
@@ -186,17 +184,15 @@ def is_greeting(query: str) -> bool:
     return clean in GREETING_PATTERNS
 
 def build_search_query(question: str) -> str:
-    """Pre-process and expand abbreviations into a single optimized search string for 1 fast embedding lookup."""
+    """Pre-process and expand abbreviations into a single optimized search string."""
     lower_q = question.lower()
     
-    # Strip conversational Hinglish/English question prefixes
     fillers = ["kya hai", "kaise kaam karta hai", "kaise hota hai", "kya hota hai", "batao", "bataiye", "explain", "what is", "tell me about", "details of"]
     cleaned = lower_q
     for f in fillers:
         cleaned = cleaned.replace(f, " ")
     cleaned = cleaned.strip("?!., ")
     
-    # Expand common domain abbreviations
     tokens = cleaned.split() if cleaned else lower_q.split()
     expanded = []
     for t in tokens:
@@ -222,21 +218,17 @@ class GraphState(TypedDict):
 def retrieve_node(state: GraphState):
     question = state["question"]
     
-    # Fast path: Skip vector retrieval for greetings
     if is_greeting(question):
         return {"documents": []}
     
     search_q = build_search_query(question)
     
-    # In-memory query cache check
     if search_q in _query_cache:
         return {"documents": _query_cache[search_q]}
     
     retriever_instance = get_retriever()
-    # Single fast embedding query lookup (reduced from 3+ round-trips to exactly 1)
     documents = retriever_instance.invoke(search_q)
     
-    # Maintain LRU-style cache
     if len(_query_cache) > 100:
         _query_cache.pop(next(iter(_query_cache)))
     _query_cache[search_q] = documents
@@ -272,8 +264,10 @@ Instructions:
     content = response.content
     if isinstance(content, list):
         answer_text = "".join([part.get("text", "") if isinstance(part, dict) else str(part) for part in content])
+    elif hasattr(content, "text"):
+        answer_text = content.text
     else:
-        answer_text = content
+        answer_text = str(content)
 
     return {"answer": answer_text}
 
@@ -388,8 +382,14 @@ def query_rag(request: QueryRequest):
             documents=formatted_docs
         )
     except Exception as e:
-        print(f"Error in query_rag: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        err_text = str(e)
+        print(f"Error in query_rag: {err_text}")
+        if "429" in err_text or "RESOURCE_EXHAUSTED" in err_text:
+            raise HTTPException(
+                status_code=429,
+                detail="Gemini API rate limit reached. Please wait a few seconds before asking another question."
+            )
+        raise HTTPException(status_code=500, detail=err_text)
 
 def free_port_if_occupied(port: int = 8000):
     """Pre-flight check to detect and automatically release port if an orphaned process is listening on it."""
