@@ -20,9 +20,9 @@ STEP 2: OPEN / RUN FRONTEND UI
 After the backend is running in the terminal:
 
 1. Open File Explorer and navigate to:
-   e:\TOPS Classes\Agentic Ai\RAG\RAG_Chatbot
+   e:\TOPS Classes\Agentic Ai\RAG\RAG_Chatbot\frontend
 2. Double-click "index.html" to open the UI in your web browser (Chrome, Edge, Firefox).
 
-(Alternatively, in a second terminal window, run `python -m http.server 3000` and open `http://localhost:3000/index.html`).
+(Or directly open http://127.0.0.1:8000 in your browser if serving via FastAPI).
 
 

@@ -1,0 +1,171 @@
+================================================================================
+           COMPLETE STEP-BY-STEP GUIDE: DEPLOYING RAG CHATBOT ON RENDER
+================================================================================
+
+Project: Enterprise RAG Knowledge Assistant
+Backend: FastAPI + LangGraph + ChromaDB + Google Gemini AI
+Frontend: Modern Responsive Web UI (HTML/CSS/JS)
+GitHub Repo: https://github.com/shivrathod25/RAG_CHATBOT
+
+--------------------------------------------------------------------------------
+TABLE OF CONTENTS:
+--------------------------------------------------------------------------------
+1. Prerequisites
+2. Step 1: Push Latest Code to GitHub (Done)
+3. Step 2: Deploy Backend as a Web Service on Render
+4. Step 3: Deploy Frontend as a Static Site on Render
+5. Step 4: Configure Frontend API Connection
+6. Step 5: Verification & Testing
+7. Troubleshooting & FAQ (Free Tier Cold Starts, Memory, CORS)
+
+================================================================================
+1. PREREQUISITES
+================================================================================
+Before starting, ensure you have:
+1. A Render account (Sign up for free at: https://render.com)
+2. Your GitHub repository connected to Render (https://github.com/shivrathod25/RAG_CHATBOT)
+3. Your Google Gemini API Key (from Google AI Studio: https://aistudio.google.com)
+
+================================================================================
+2. STEP 1: DEPLOY BACKEND AS A WEB SERVICE ON RENDER
+================================================================================
+
+1. Log in to your Render Dashboard (https://dashboard.render.com).
+2. Click on the "New +" button (top-right) and select "Web Service".
+3. Choose "Build and deploy from a Git repository".
+4. Connect your GitHub account (if not already connected) and select the repository:
+   "shivrathod25/RAG_CHATBOT"
+5. Fill in the Web Service configuration details as follows:
+
+   - Name:               rag-chatbot-backend   (or any preferred name)
+   - Region:             Singapore (Southeast Asia) or Oregon (US West)
+   - Branch:             main
+   - Root Directory:     (Leave blank / empty)
+   - Runtime:            Python 3
+   - Build Command:      pip install -r requirements.txt
+   - Start Command:      uvicorn backend.app:app --host 0.0.0.0 --port $PORT
+
+   - Instance Type:      Free
+
+6. Scroll down to the "Environment Variables" section and click "Add Environment Variable":
+
+   -----------------------------------------------------------------------
+   | Key               | Value                                           |
+   -----------------------------------------------------------------------
+   | GOOGLE_API_KEY    | your_actual_google_gemini_api_key_here          |
+   | PYTHON_VERSION    | 3.11.9                                          |
+   -----------------------------------------------------------------------
+
+7. Click the "Create Web Service" button at the bottom.
+8. Render will now start building and deploying your backend:
+   - It will install all dependencies from requirements.txt.
+   - It will start the Uvicorn server on the port assigned by Render ($PORT).
+9. Wait 2-3 minutes until you see the status change to:
+   "Your service is live 🎉"
+10. Copy your live Backend Web Service URL (e.g., https://rag-chatbot-backend.onrender.com).
+
+================================================================================
+3. STEP 2: TEST YOUR LIVE BACKEND API
+================================================================================
+
+Open a new browser tab and test the following endpoints using your backend URL:
+
+1. Health Check Endpoint:
+   https://<your-backend-name>.onrender.com/api/health
+   -> Expected output:
+      {"status":"healthy","service":"RAG Chatbot API","knowledge_base":["ML.pdf","HR_Policy.pdf","IT_Security_Policy.pdf"]}
+
+2. API Documentation (Swagger UI):
+   https://<your-backend-name>.onrender.com/docs
+
+================================================================================
+4. STEP 3: DEPLOY FRONTEND AS A STATIC SITE ON RENDER
+================================================================================
+
+1. In the Render Dashboard, click "New +" and select "Static Site".
+2. Select your repository: "shivrathod25/RAG_CHATBOT".
+3. Configure the Static Site settings:
+
+   - Name:               rag-chatbot-frontend  (or any preferred name)
+   - Branch:             main
+   - Root Directory:     (Leave blank / empty)
+   - Build Command:      (Leave blank / empty)
+   - Publish Directory:  frontend
+
+4. Click "Create Static Site".
+5. Render will immediately deploy your static frontend files (index.html).
+6. Copy your live Frontend URL (e.g., https://rag-chatbot-frontend.onrender.com).
+
+================================================================================
+5. STEP 4: CONNECT FRONTEND TO YOUR LIVE BACKEND
+================================================================================
+
+1. Open your live frontend website in the browser:
+   https://<your-frontend-name>.onrender.com
+
+2. In the top-right / settings bar of the UI, look for the "FastAPI Endpoint URL" field (or click the Settings gear icon):
+   Change:
+     http://127.0.0.1:8000/api/chat
+   To your live Render backend URL:
+     https://<your-backend-name>.onrender.com/api/chat
+
+3. Click "Save & Connect" (or test connection).
+4. The status indicator in the top navbar will turn Green ("API Online").
+
+================================================================================
+6. STEP 5: VERIFICATION & TESTING
+================================================================================
+
+Try asking the following test questions in the live chatbot UI:
+
+1. Basic Greeting:
+   "Hi, what topics can you assist me with?"
+   -> AI should greet you and introduce HR Policies, IT Security, and ML.
+
+2. Machine Learning Test:
+   "Types of ML"
+   -> AI should retrieve and display Supervised, Unsupervised, and Reinforcement Learning.
+
+3. HR Policy Test:
+   "What is the annual leave policy?"
+   -> AI should return 18 days annual leave, 10 days sick leave, etc.
+
+4. IT Security Test:
+   "What are the password requirements?"
+   -> AI should return the IT security guidelines from IT_Security_Policy.pdf.
+
+================================================================================
+7. IMPORTANT NOTES & TROUBLESHOOTING
+================================================================================
+
+1. Free Tier Cold Starts (Render Inactivity Spin-Down):
+   - On the Render Free Tier, web services spin down after 15 minutes of inactivity.
+   - When a new request arrives after inactivity, Render wakes up the service (takes 30-50 seconds).
+   - If the first request takes longer or shows connecting, wait ~40 seconds for the backend instance to spin up.
+
+2. CORS (Cross-Origin Resource Sharing):
+   - The FastAPI backend in backend/app.py already includes CORSMiddleware with allow_origins=["*"], so requests from your Render frontend domain are automatically allowed.
+
+3. ChromaDB Vector Store on Render:
+   - On deployment, backend/app.py automatically checks if ChromaDB exists, or indexes the bundled PDFs (ML.pdf, HR_Policy.pdf, IT_Security_Policy.pdf) into memory/disk.
+
+4. Port Binding on Render:
+   - Never hardcode port 8000 in Render startup command. Always use `--port $PORT` in the start command:
+     `uvicorn backend.app:app --host 0.0.0.0 --port $PORT`
+
+================================================================================
+                              DEPLOYMENT COMPLETE
+================================================================================
+
+================================================================================
+8. RESUME BULLET POINTS (FOR SOFTWARE / AI / ML ROLES)
+================================================================================
+
+Project Title: Enterprise RAG Knowledge Assistant & Chatbot
+Tech Stack: Python, FastAPI, LangGraph, LangChain, ChromaDB, Google Gemini AI (LLM & Embeddings), Render, HTML5/CSS3/JS
+
+Bullet Points:
+• Architected an end-to-end Enterprise RAG (Retrieval-Augmented Generation) pipeline using LangGraph and LangChain, executing cyclic state workflows for query expansion, vector retrieval, and hallucination-free grounded generation across multi-domain knowledge bases.
+• Built a high-performance vector indexing and semantic search system with ChromaDB and Google Gemini Embeddings (models/gemini-embedding-001), optimizing recursive document chunking and overlap to achieve sub-second semantic retrieval.
+• Developed an asynchronous REST API backend using FastAPI with automated multi-model LLM fallback (handling 503/429 rate limits across Gemini Flash models) and deployed production microservices on Render paired with a responsive web UI.
+

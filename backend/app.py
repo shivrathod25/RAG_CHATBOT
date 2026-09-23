@@ -7,7 +7,7 @@ from typing import List, Dict, Any, TypedDict
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 
 from langchain_community.document_loaders import PyPDFLoader
@@ -16,7 +16,11 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 from langchain_chroma import Chroma
 from langgraph.graph import StateGraph, START, END
 
+# Base directory (project root)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # Load Environment Variables (.env)
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 load_dotenv()
 
 # Initialize FastAPI App
@@ -35,17 +39,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-import time
-
-# Base directory (project root)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 # Initialize Gemini LLM & Embedding Model
 FALLBACK_MODELS = [
+    "gemini-3.5-flash-lite",
     "gemini-3.6-flash",
     "gemini-3.5-flash",
-    "gemini-3.5-flash-lite",
-    "gemini-flash-latest"
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-2.0-flash-lite"
 ]
 
 def invoke_llm_with_fallback(prompt_text: str):
@@ -212,7 +219,7 @@ Instructions:
     if isinstance(content, list):
         answer_text = "".join([part.get("text", "") if isinstance(part, dict) else str(part) for part in content])
     else:
-        answer_text = str(content)
+        answer_text = content
 
     return {"answer": answer_text}
 
@@ -255,10 +262,10 @@ def read_root():
         }
     }
 
-@app.get("/favicon.ico")
+@app.get("/favicon.ico", include_in_schema=False)
 def get_favicon():
     """Silence browser favicon requests gracefully."""
-    return FileResponse(os.devnull, media_type="image/x-icon")
+    return Response(status_code=204)
 
 @app.get("/api/health")
 def health_check():
@@ -319,7 +326,7 @@ def query_rag(request: QueryRequest):
 
 def free_port_if_occupied(port: int = 8000):
     """Pre-flight check to detect and automatically release port if an orphaned process is listening on it."""
-    import socket, subprocess
+    import socket, subprocess, time
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     is_busy = sock.connect_ex(('127.0.0.1', port)) == 0
     sock.close()
