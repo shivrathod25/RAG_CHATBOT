@@ -42,8 +42,8 @@ if hasattr(sys.stderr, "reconfigure"):
 # Initialize FastAPI App
 app = FastAPI(
     title="Enterprise RAG Chatbot API",
-    description="Backend API powered by LangGraph, Chroma DB, and Google Gemini",
-    version="1.0.0"
+    description="High-performance RAG Backend API powered by LangGraph, Chroma DB, and Google Gemini",
+    version="1.1.0"
 )
 
 # Configure CORS for Frontend Integration
@@ -60,28 +60,39 @@ frontend_dir = os.path.join(BASE_DIR, "frontend")
 if os.path.exists(frontend_dir):
     app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
-# LLM Fallback Models (Handling 503 capacity & 429 quota limits across regions)
+# Valid, ultra-fast Gemini Production Models (Ordered by speed & reliability)
 FALLBACK_MODELS = [
-    "gemini-2.5-flash",
     "gemini-2.0-flash",
     "gemini-1.5-flash",
     "gemini-2.0-flash-lite",
-    "gemini-3.5-flash",
-    "gemini-3.5-flash-lite"
+    "gemini-1.5-flash-8b"
 ]
 
+# Persistent LLM client cache to eliminate re-instantiation latency
+_llm_cache: Dict[str, ChatGoogleGenerativeAI] = {}
+
+def get_llm_client(model_name: str) -> ChatGoogleGenerativeAI:
+    """Retrieve or create cached LLM client instance."""
+    if model_name not in _llm_cache:
+        _llm_cache[model_name] = ChatGoogleGenerativeAI(
+            model=model_name,
+            temperature=0.1,
+            max_retries=1,
+            timeout=12
+        )
+    return _llm_cache[model_name]
+
 def invoke_llm_with_fallback(prompt_text: str):
-    """Invoke Gemini LLM with automatic fallback across models if 503 capacity or 429 quota errors occur."""
+    """Invoke Gemini LLM with instant cached instances and automatic fallback."""
     last_error = None
     for model_name in FALLBACK_MODELS:
         try:
-            model_llm = ChatGoogleGenerativeAI(model=model_name, temperature=0)
+            model_llm = get_llm_client(model_name)
             return model_llm.invoke(prompt_text)
         except Exception as e:
             last_error = e
             err_msg = str(e).encode('ascii', 'backslashreplace').decode('ascii')
-            print(f"Model '{model_name}' temporary notice: {err_msg}. Trying next fallback...")
-            time.sleep(0.3)
+            print(f"[WARNING] Model '{model_name}' temporary notice: {err_msg}. Trying next fallback...")
             continue
     if last_error is not None:
         raise last_error
@@ -92,23 +103,27 @@ COLLECTION_NAME = "chroma_db"
 PERSIST_DIRECTORY = os.path.join(BASE_DIR, "chroma_db")
 PDF_FILES = ["ML.pdf", "HR_Policy.pdf", "IT_Security_Policy.pdf"]
 
+_embeddings_instance = None
 _vectorstore = None
 _retriever = None
+_query_cache: Dict[str, List[Any]] = {}
 
 def get_embeddings():
-    """Retrieve embeddings instance."""
-    return GoogleGenerativeAIEmbeddings(
-        model="models/gemini-embedding-001"
-    )
+    """Retrieve singleton embeddings instance."""
+    global _embeddings_instance
+    if _embeddings_instance is None:
+        _embeddings_instance = GoogleGenerativeAIEmbeddings(
+            model="models/gemini-embedding-001"
+        )
+    return _embeddings_instance
 
 def initialize_vectorstore():
-    """Initialize Chroma vector store. Ensures all PDF documents are loaded and indexed."""
+    """Initialize Chroma vector store with persistent caching."""
     global _vectorstore, _retriever
     if _vectorstore is not None:
         return _vectorstore
 
     embeddings = get_embeddings()
-    rebuild_needed = False
     
     if os.path.exists(PERSIST_DIRECTORY) and os.listdir(PERSIST_DIRECTORY):
         try:
@@ -117,26 +132,12 @@ def initialize_vectorstore():
                 embedding_function=embeddings,
                 persist_directory=PERSIST_DIRECTORY
             )
-            # Verify if documents from all PDF files exist in the collection
-            existing_data = vs.get()
-            existing_sources = set()
-            if existing_data and "metadatas" in existing_data and existing_data["metadatas"]:
-                for meta in existing_data["metadatas"]:
-                    if meta and "source" in meta:
-                        existing_sources.add(meta["source"])
-            
-            missing_files = [f for f in PDF_FILES if f not in existing_sources]
-            if not missing_files and len(existing_data.get("ids", [])) > 0:
-                print(f"[INFO] Loaded existing Chroma DB from '{PERSIST_DIRECTORY}' with sources: {existing_sources}")
-                _vectorstore = vs
-                _retriever = vs.as_retriever(search_kwargs={"k": 6})
-                return _vectorstore
-            else:
-                print(f"[INFO] Chroma DB missing sources {missing_files}. Rebuilding...")
-                rebuild_needed = True
+            print(f"[INFO] Successfully loaded existing Chroma DB from '{PERSIST_DIRECTORY}'")
+            _vectorstore = vs
+            _retriever = vs.as_retriever(search_kwargs={"k": 4})
+            return _vectorstore
         except Exception as e:
             print(f"[WARNING] Error checking existing Chroma DB ({e}). Rebuilding...")
-            rebuild_needed = True
 
     print("[INFO] Building new Chroma DB from PDF documents...")
     all_documents = []
@@ -163,7 +164,7 @@ def initialize_vectorstore():
         collection_name=COLLECTION_NAME,
         persist_directory=PERSIST_DIRECTORY
     )
-    _retriever = _vectorstore.as_retriever(search_kwargs={"k": 6})
+    _retriever = _vectorstore.as_retriever(search_kwargs={"k": 4})
     return _vectorstore
 
 def get_retriever():
@@ -173,6 +174,45 @@ def get_retriever():
         initialize_vectorstore()
     return _retriever
 
+# Conversational Greeting & Fast-Path Routing
+GREETING_PATTERNS = {
+    "hi", "hello", "hey", "hii", "heyy", "good morning", "good evening", 
+    "good afternoon", "how are you", "who are you", "help", "namaste", "hola"
+}
+
+def is_greeting(query: str) -> bool:
+    """Detect if query is a simple greeting or chit-chat."""
+    clean = query.strip().lower().rstrip("?!., ")
+    return clean in GREETING_PATTERNS
+
+def build_search_query(question: str) -> str:
+    """Pre-process and expand abbreviations into a single optimized search string for 1 fast embedding lookup."""
+    lower_q = question.lower()
+    
+    # Strip conversational Hinglish/English question prefixes
+    fillers = ["kya hai", "kaise kaam karta hai", "kaise hota hai", "kya hota hai", "batao", "bataiye", "explain", "what is", "tell me about", "details of"]
+    cleaned = lower_q
+    for f in fillers:
+        cleaned = cleaned.replace(f, " ")
+    cleaned = cleaned.strip("?!., ")
+    
+    # Expand common domain abbreviations
+    tokens = cleaned.split() if cleaned else lower_q.split()
+    expanded = []
+    for t in tokens:
+        term = t.strip("?,.!")
+        if term == "ml":
+            expanded.append("Machine Learning")
+        elif term == "hr":
+            expanded.append("HR Policy")
+        elif term == "it":
+            expanded.append("IT Security")
+        else:
+            expanded.append(t)
+    
+    result = " ".join(expanded).strip()
+    return result if result else question
+
 # LangGraph State Graph Definition
 class GraphState(TypedDict):
     question: str
@@ -181,49 +221,39 @@ class GraphState(TypedDict):
 
 def retrieve_node(state: GraphState):
     question = state["question"]
+    
+    # Fast path: Skip vector retrieval for greetings
+    if is_greeting(question):
+        return {"documents": []}
+    
+    search_q = build_search_query(question)
+    
+    # In-memory query cache check
+    if search_q in _query_cache:
+        return {"documents": _query_cache[search_q]}
+    
     retriever_instance = get_retriever()
+    # Single fast embedding query lookup (reduced from 3+ round-trips to exactly 1)
+    documents = retriever_instance.invoke(search_q)
     
-    # 1. Primary vector search
-    documents = retriever_instance.invoke(question)
+    # Maintain LRU-style cache
+    if len(_query_cache) > 100:
+        _query_cache.pop(next(iter(_query_cache)))
+    _query_cache[search_q] = documents
     
-    # 2. Query Expansion for abbreviations and Hinglish terms
-    expanded_queries = []
-    lower_q = question.lower()
-    
-    # Abbreviation expansion
-    if "ml" in lower_q.split() or "ml" in lower_q:
-        expanded_queries.append(lower_q.replace("ml", "machine learning"))
-    if "hr" in lower_q.split():
-        expanded_queries.append(lower_q.replace("hr", "human resources"))
-    if "it" in lower_q.split():
-        expanded_queries.append(lower_q.replace("it", "information technology"))
-        
-    # Hinglish query cleanup
-    cleaned_query = lower_q
-    for phrase in ["kya hai", "kaise kaam karta hai", "kaise hota hai", "kya hota hai", "batao", "bataiye"]:
-        cleaned_query = cleaned_query.replace(phrase, "").strip()
-    if cleaned_query and cleaned_query != lower_q:
-        expanded_queries.append(cleaned_query)
-
-    # Execute expanded queries if needed to supplement documents
-    existing_contents = {doc.page_content for doc in documents}
-    for eq in expanded_queries:
-        if eq and eq != lower_q:
-            extra_docs = retriever_instance.invoke(eq)
-            for doc in extra_docs:
-                if doc.page_content not in existing_contents:
-                    documents.append(doc)
-                    existing_contents.add(doc.page_content)
-
     return {"documents": documents}
 
 def generate_node(state: GraphState):
     question = state["question"]
-    documents = state["documents"]
+    documents = state.get("documents", [])
 
-    context = "\n\n".join(doc.page_content for doc in documents)
-    
-    prompt = f"""You are a professional enterprise RAG AI Assistant for HR Policy, IT Security Policy, and Machine Learning Fundamentals.
+    if is_greeting(question):
+        prompt = f"""You are the Enterprise RAG AI Assistant for HR Policy, IT Security, and Machine Learning.
+User Greeting: {question}
+Reply warmly, concisely, and state that you can answer questions about HR Policies, IT Security Guidelines, and Machine Learning Fundamentals."""
+    else:
+        context = "\n\n".join(doc.page_content for doc in documents)
+        prompt = f"""You are an enterprise AI assistant for HR Policy, IT Security, and Machine Learning.
 
 Context from Documents:
 {context}
@@ -232,21 +262,11 @@ User Question:
 {question}
 
 Instructions:
-1. Conversational Greetings & General Queries:
-   If the user asks a basic conversational or greeting question (such as "Hi", "Hello", "Hey", "How are you?", "Who are you?", "Good morning", "Help", etc.), respond politely, warmly, and naturally as an AI assistant. State that you are here to help with questions about HR Policies, IT Security Guidelines, or Machine Learning Fundamentals. Do NOT state that information is unavailable for basic greetings or chit-chat.
-
-2. Specific Knowledge / Document Questions (Strict Grounding):
-   If the user asks a factual or domain question that requires specific information:
-   - Answer accurately using ONLY the information provided in the Context from Documents above.
-   - If the requested specific information is NOT present or cannot be inferred from the provided context, respond ONLY with:
-     "The requested information could not be found in the provided documents."
-   - Do NOT invent, make up, or hallucinate any facts outside the provided document context.
-
-3. Language Support:
-   Support questions in English or Hinglish (Hindi written in Roman script). Respond in the same language/style as the user's question.
-
-4. Formatting:
-   Format responses with clear markdown, incorporating a short intro and bullet points where applicable."""
+1. Answer accurately using ONLY the provided Context above.
+2. If the specific answer is NOT in the Context, respond ONLY with:
+   "The requested information could not be found in the provided documents."
+3. If asked in Hinglish/Hindi, respond in Hinglish with the same style.
+4. Keep the answer structured, clear, and concise with short bullet points."""
 
     response = invoke_llm_with_fallback(prompt)
     content = response.content
@@ -338,7 +358,7 @@ def get_pdf(filename: str):
 
 @app.post("/api/chat", response_model=QueryResponse)
 def query_rag(request: QueryRequest):
-    """Execute LangGraph RAG workflow on incoming question."""
+    """Execute optimized LangGraph RAG workflow on incoming question."""
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
     
@@ -382,11 +402,9 @@ def free_port_if_occupied(port: int = 8000):
         print(f"[WARNING] Port {port} is currently occupied by another process. Attempting automatic cleanup...")
         try:
             if os.name == 'nt':
-                # Windows: Find and terminate process occupying target port
                 ps_cmd = f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object {{ Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }}"
                 subprocess.run(["powershell", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             else:
-                # Unix/Linux/macOS
                 subprocess.run(["fuser", "-k", f"{port}/tcp"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             time.sleep(1)
             print(f"[SUCCESS] Port {port} successfully freed.")
