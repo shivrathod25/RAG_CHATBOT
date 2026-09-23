@@ -1219,9 +1219,25 @@
 
   <!-- Frontend JavaScript Logic -->
   <script>
+    function resolveDefaultApiUrl() {
+      const saved = localStorage.getItem('rag_api_url');
+      if (saved) {
+        if (window.location.protocol.startsWith('http') && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
+          if (saved.includes('localhost') || saved.includes('127.0.0.1')) {
+            return `${window.location.origin}/api/chat`;
+          }
+        }
+        return saved;
+      }
+      if (window.location.protocol.startsWith('http')) {
+        return `${window.location.origin}/api/chat`;
+      }
+      return 'http://127.0.0.1:8000/api/chat';
+    }
+
     // State Container
     const state = {
-      apiUrl: localStorage.getItem('rag_api_url') || 'http://127.0.0.1:8000/api/chat',
+      apiUrl: resolveDefaultApiUrl(),
       useMock: localStorage.getItem('rag_use_mock') === 'true',
       isConnected: false,
       messages: [],
@@ -1528,16 +1544,14 @@
       showToast('Copied to clipboard!');
     }
 
-    function copyMessageText(btnEl, text) {
-      navigator.clipboard.writeText(text);
-      showToast('Copied to clipboard!');
-    }
-
     // Open PDF Viewer in new browser tab
     function openPdfViewer(filename) {
-      let backendBaseUrl = 'http://localhost:8000';
+      let backendBaseUrl = '';
       if (state.apiUrl) {
         backendBaseUrl = state.apiUrl.replace('/api/chat', '');
+      }
+      if (!backendBaseUrl || backendBaseUrl.startsWith('file:') || backendBaseUrl === 'null') {
+        backendBaseUrl = window.location.protocol.startsWith('http') ? window.location.origin : 'http://127.0.0.1:8000';
       }
       const pdfUrl = `${backendBaseUrl}/pdfs/${filename}`;
       showToast(`Opening ${filename}...`);

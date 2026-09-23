@@ -1,13 +1,12 @@
 import os
-os.environ["ANONYMIZED_TELEMETRY"] = "False"
-os.environ["POSTHOG_DISABLED"] = "1"
-os.environ["CHROMA_TELEMETRY"] = "False"
-
+import sys
+import time
 from typing import List, Dict, Any, TypedDict
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from langchain_community.document_loaders import PyPDFLoader
@@ -16,6 +15,11 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 from langchain_chroma import Chroma
 from langgraph.graph import StateGraph, START, END
 
+# Telemetry control
+os.environ["ANONYMIZED_TELEMETRY"] = "False"
+os.environ["POSTHOG_DISABLED"] = "1"
+os.environ["CHROMA_TELEMETRY"] = "False"
+
 # Base directory (project root)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -23,9 +27,21 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 load_dotenv()
 
+# Normalize Google Gemini API Key
+api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
+if api_key:
+    os.environ["GOOGLE_API_KEY"] = api_key
+    os.environ["GEMINI_API_KEY"] = api_key
+
+# Configure standard I/O encoding
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 # Initialize FastAPI App
 app = FastAPI(
-    title="RAG Chatbot API",
+    title="Enterprise RAG Chatbot API",
     description="Backend API powered by LangGraph, Chroma DB, and Google Gemini",
     version="1.0.0"
 )
@@ -39,20 +55,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-import sys
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-if hasattr(sys.stderr, "reconfigure"):
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+# Mount frontend static directory if exists
+frontend_dir = os.path.join(BASE_DIR, "frontend")
+if os.path.exists(frontend_dir):
+    app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
-# Initialize Gemini LLM & Embedding Model
+# LLM Fallback Models (Handling 503 capacity & 429 quota limits across regions)
 FALLBACK_MODELS = [
-    "gemini-3.5-flash-lite",
-    "gemini-3.6-flash",
-    "gemini-3.5-flash",
+    "gemini-2.5-flash",
     "gemini-2.0-flash",
     "gemini-1.5-flash",
-    "gemini-2.0-flash-lite"
+    "gemini-2.0-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite"
 ]
 
 def invoke_llm_with_fallback(prompt_text: str):
@@ -65,24 +80,34 @@ def invoke_llm_with_fallback(prompt_text: str):
         except Exception as e:
             last_error = e
             err_msg = str(e).encode('ascii', 'backslashreplace').decode('ascii')
-            print(f"Model '{model_name}' temporary error: {err_msg}. Retrying fallback...")
-            time.sleep(0.5)
+            print(f"Model '{model_name}' temporary notice: {err_msg}. Trying next fallback...")
+            time.sleep(0.3)
             continue
     if last_error is not None:
         raise last_error
     raise RuntimeError("All LLM fallback models failed.")
-
-embeddings = GoogleGenerativeAIEmbeddings(
-    model="models/gemini-embedding-001"
-)
 
 # Vector DB & Knowledge Base Setup
 COLLECTION_NAME = "chroma_db"
 PERSIST_DIRECTORY = os.path.join(BASE_DIR, "chroma_db")
 PDF_FILES = ["ML.pdf", "HR_Policy.pdf", "IT_Security_Policy.pdf"]
 
+_vectorstore = None
+_retriever = None
+
+def get_embeddings():
+    """Retrieve embeddings instance."""
+    return GoogleGenerativeAIEmbeddings(
+        model="models/gemini-embedding-001"
+    )
+
 def initialize_vectorstore():
     """Initialize Chroma vector store. Ensures all PDF documents are loaded and indexed."""
+    global _vectorstore, _retriever
+    if _vectorstore is not None:
+        return _vectorstore
+
+    embeddings = get_embeddings()
     rebuild_needed = False
     
     if os.path.exists(PERSIST_DIRECTORY) and os.listdir(PERSIST_DIRECTORY):
@@ -102,16 +127,18 @@ def initialize_vectorstore():
             
             missing_files = [f for f in PDF_FILES if f not in existing_sources]
             if not missing_files and len(existing_data.get("ids", [])) > 0:
-                print(f"Loaded existing Chroma DB from '{PERSIST_DIRECTORY}' with sources: {existing_sources}")
-                return vs
+                print(f"[INFO] Loaded existing Chroma DB from '{PERSIST_DIRECTORY}' with sources: {existing_sources}")
+                _vectorstore = vs
+                _retriever = vs.as_retriever(search_kwargs={"k": 6})
+                return _vectorstore
             else:
-                print(f"Chroma DB missing sources {missing_files}. Rebuilding...")
+                print(f"[INFO] Chroma DB missing sources {missing_files}. Rebuilding...")
                 rebuild_needed = True
         except Exception as e:
-            print(f"Error checking existing Chroma DB ({e}). Rebuilding...")
+            print(f"[WARNING] Error checking existing Chroma DB ({e}). Rebuilding...")
             rebuild_needed = True
 
-    print("Building new Chroma DB from PDF documents...")
+    print("[INFO] Building new Chroma DB from PDF documents...")
     all_documents = []
     for pdf_file in PDF_FILES:
         pdf_path = os.path.join(BASE_DIR, pdf_file)
@@ -128,17 +155,23 @@ def initialize_vectorstore():
         chunk_overlap=100
     )
     chunks = text_splitter.split_documents(all_documents)
-    print(f"Created {len(chunks)} text chunks.")
+    print(f"[INFO] Created {len(chunks)} text chunks.")
 
-    return Chroma.from_documents(
+    _vectorstore = Chroma.from_documents(
         documents=chunks,
         embedding=embeddings,
         collection_name=COLLECTION_NAME,
         persist_directory=PERSIST_DIRECTORY
     )
+    _retriever = _vectorstore.as_retriever(search_kwargs={"k": 6})
+    return _vectorstore
 
-vectorstore = initialize_vectorstore()
-retriever = vectorstore.as_retriever(search_kwargs={"k": 6})
+def get_retriever():
+    """Lazy retriever access."""
+    global _retriever
+    if _retriever is None:
+        initialize_vectorstore()
+    return _retriever
 
 # LangGraph State Graph Definition
 class GraphState(TypedDict):
@@ -148,9 +181,10 @@ class GraphState(TypedDict):
 
 def retrieve_node(state: GraphState):
     question = state["question"]
+    retriever_instance = get_retriever()
     
     # 1. Primary vector search
-    documents = retriever.invoke(question)
+    documents = retriever_instance.invoke(question)
     
     # 2. Query Expansion for abbreviations and Hinglish terms
     expanded_queries = []
@@ -175,7 +209,7 @@ def retrieve_node(state: GraphState):
     existing_contents = {doc.page_content for doc in documents}
     for eq in expanded_queries:
         if eq and eq != lower_q:
-            extra_docs = retriever.invoke(eq)
+            extra_docs = retriever_instance.invoke(eq)
             for doc in extra_docs:
                 if doc.page_content not in existing_contents:
                     documents.append(doc)
@@ -223,7 +257,6 @@ Instructions:
 
     return {"answer": answer_text}
 
-
 # Build LangGraph App Workflow
 workflow = StateGraph(GraphState)
 workflow.add_node("retrieve", retrieve_node)
@@ -251,14 +284,18 @@ class QueryResponse(BaseModel):
 # REST Endpoints
 @app.get("/")
 def read_root():
-    """Root backend API endpoint."""
+    """Serve the interactive web frontend at root URL if available, else API status."""
+    frontend_path = os.path.join(BASE_DIR, "frontend", "index.html")
+    if os.path.exists(frontend_path):
+        return FileResponse(frontend_path, media_type="text/html")
     return {
         "status": "online",
-        "service": "RAG Chatbot FastAPI Backend",
+        "service": "Enterprise RAG Chatbot API",
         "endpoints": {
             "health": "/api/health",
             "chat": "/api/chat",
-            "documents": "/api/documents"
+            "documents": "/api/documents",
+            "docs": "/docs"
         }
     }
 
@@ -269,14 +306,18 @@ def get_favicon():
 
 @app.get("/api/health")
 def health_check():
+    """Health check endpoint for Render monitoring and client status checks."""
+    has_key = bool(os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY"))
     return {
-        "status": "healthy",
+        "status": "healthy" if has_key else "needs_configuration",
         "service": "RAG Chatbot API",
+        "api_key_configured": has_key,
         "knowledge_base": PDF_FILES
     }
 
 @app.get("/api/documents")
 def get_documents_info():
+    """Return list of knowledge base documents with metadata."""
     return {
         "documents": [
             {"filename": "HR_Policy.pdf", "title": "HR Policy Manual", "category": "HR Policy & Benefits", "pages": 14},
@@ -297,9 +338,16 @@ def get_pdf(filename: str):
 
 @app.post("/api/chat", response_model=QueryResponse)
 def query_rag(request: QueryRequest):
+    """Execute LangGraph RAG workflow on incoming question."""
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
     
+    if not (os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")):
+        raise HTTPException(
+            status_code=500,
+            detail="GOOGLE_API_KEY is not configured. Please add your GOOGLE_API_KEY in the Render Environment Variables dashboard."
+        )
+
     try:
         result = rag_app.invoke({
             "question": request.question,
@@ -323,10 +371,9 @@ def query_rag(request: QueryRequest):
         print(f"Error in query_rag: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 def free_port_if_occupied(port: int = 8000):
     """Pre-flight check to detect and automatically release port if an orphaned process is listening on it."""
-    import socket, subprocess, time
+    import socket, subprocess
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     is_busy = sock.connect_ex(('127.0.0.1', port)) == 0
     sock.close()
@@ -348,7 +395,11 @@ def free_port_if_occupied(port: int = 8000):
 
 if __name__ == "__main__":
     import uvicorn
-    free_port_if_occupied(8000)
-    uvicorn.run(app, host="127.0.0.1", port=8000)
-
-
+    port = int(os.environ.get("PORT", 8000))
+    host = "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1"
+    
+    if host == "127.0.0.1":
+        free_port_if_occupied(port)
+        
+    print(f"Starting FastAPI server on {host}:{port}...")
+    uvicorn.run(app, host=host, port=port)
