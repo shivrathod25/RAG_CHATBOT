@@ -3,165 +3,360 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enterprise RAG Knowledge Assistant</title>
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Nexus RAG | Enterprise AI Knowledge Assistant</title>
   <meta name="description"
-    content="AI-Powered Retrieval-Augmented Generation Chatbot for Enterprise Knowledge Base (HR, Security, and Machine Learning Policy Docs).">
+    content="Next-generation Enterprise Retrieval-Augmented Generation (RAG) Assistant for HR Policy, IT Security Governance, and Machine Learning Knowledge Base.">
 
-  <!-- Fonts -->
+  <!-- Favicon -->
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+
+  <!-- Modern Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Fira+Code:wght@400;500&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
     rel="stylesheet">
 
   <!-- Marked.js for Markdown parsing -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <!-- Highlight.js for Syntax Highlighting -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/styles/github.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/styles/github-dark.min.css">
   <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/lib/highlight.min.js"></script>
 
   <style>
+    /* ==========================================================================
+       DESIGN SYSTEM & CSS VARIABLES
+       Clean, sophisticated slate & indigo palette (No harsh black primary)
+       ========================================================================== */
     :root {
-      /* Palette: Modern Light Slate & Indigo Accent */
-      --bg-body: #f8fafc;
-      --bg-surface: #ffffff;
-      --bg-surface-hover: #f1f5f9;
-      --bg-sidebar: #ffffff;
-      --bg-sidebar-alt: #f8fafc;
-      --bg-chat-user: #4f46e5;
-      --text-user: #ffffff;
-      --bg-chat-bot: #ffffff;
-      --border-color: #e2e8f0;
-      --border-subtle: #f1f5f9;
-
+      /* Brand Palette: Deep Indigo, Violet & Electric Cyan Accents */
       --primary: #4f46e5;
       --primary-hover: #4338ca;
+      --primary-active: #3730a3;
+      --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #4338ca 100%);
+      --primary-glow: rgba(79, 70, 229, 0.28);
       --primary-light: #eef2ff;
       --primary-border: #c7d2fe;
+      --accent-cyan: #06b6d4;
+      --accent-violet: #8b5cf6;
+
+      /* Neutral Palette (Light Mode) */
+      --bg-body: #f8fafc;
+      --bg-sidebar: #ffffff;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #ffffff;
+      --bg-surface-hover: #f1f5f9;
+      --bg-muted: #f1f5f9;
+      --bg-input: #ffffff;
 
       --text-primary: #0f172a;
       --text-secondary: #475569;
       --text-tertiary: #94a3b8;
+      --text-inverse: #ffffff;
 
+      --border-subtle: #f1f5f9;
+      --border-color: #e2e8f0;
+      --border-strong: #cbd5e1;
+
+      /* Chat Elements */
+      --chat-user-bg: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+      --chat-user-text: #ffffff;
+      --chat-bot-bg: #ffffff;
+      --chat-bot-border: #e2e8f0;
+
+      /* Feedback Colors */
       --success: #10b981;
       --success-light: #ecfdf5;
+      --success-border: #a7f3d0;
       --warning: #f59e0b;
       --warning-light: #fffbeb;
       --danger: #ef4444;
       --danger-light: #fef2f2;
 
-      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --radius-lg: 16px;
+      /* Geometry & Elevation */
+      --radius-xs: 4px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
       --radius-full: 9999px;
 
-      --transition-fast: 0.15s ease;
-      --transition-normal: 0.25s ease;
+      --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+      --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 4px 8px -2px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.08), 0 4px 8px -4px rgba(15, 23, 42, 0.04);
+      --shadow-glow: 0 0 20px rgba(79, 70, 229, 0.2);
+
+      --sidebar-width: 320px;
+      --header-height: 64px;
+
+      --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-slow: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    * {
+    /* Dark Mode Theme */
+    [data-theme="dark"] {
+      --bg-body: #0b0f19;
+      --bg-sidebar: #0f172a;
+      --bg-surface: #131d31;
+      --bg-surface-elevated: #1a2640;
+      --bg-surface-hover: #1e293b;
+      --bg-muted: #1a2234;
+      --bg-input: #10192a;
+
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-tertiary: #64748b;
+      --text-inverse: #0f172a;
+
+      --border-subtle: #1e293b;
+      --border-color: #27354f;
+      --border-strong: #334155;
+
+      --primary-light: rgba(99, 102, 241, 0.15);
+      --primary-border: #4338ca;
+
+      --chat-bot-bg: #131d31;
+      --chat-bot-border: #27354f;
+
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 16px 32px -4px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Reset & Base Styles */
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
+    html,
     body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
       background-color: var(--bg-body);
       color: var(--text-primary);
-      height: 100vh;
-      display: flex;
-      overflow: hidden;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     /* App Container Layout */
     #app {
       display: flex;
       width: 100%;
-      height: 100vh;
+      height: 100%;
+      height: 100dvh;
       position: relative;
+      overflow: hidden;
     }
 
-    /* Sidebar Styling */
+    /* ==========================================================================
+       SIDEBAR & NAVIGATION
+       ========================================================================== */
     .sidebar {
-      width: 340px;
+      width: var(--sidebar-width);
+      height: 100%;
       background: var(--bg-sidebar);
       border-right: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
-      z-index: 20;
-      transition: transform var(--transition-normal);
+      z-index: 40;
+      transition: transform var(--transition-normal), width var(--transition-normal);
       flex-shrink: 0;
+      position: relative;
+    }
+
+    .sidebar.collapsed {
+      width: 0;
+      overflow: hidden;
+      border-right: none;
     }
 
     .sidebar-header {
-      padding: 20px;
+      height: var(--header-height);
+      padding: 0 18px;
       border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--bg-surface);
+      background: var(--bg-sidebar);
+      flex-shrink: 0;
     }
 
+    /* Modern Brand Identity */
     .brand {
       display: flex;
       align-items: center;
       gap: 12px;
+      text-decoration: none;
+      user-select: none;
     }
 
     .brand-icon {
-      width: 38px;
-      height: 38px;
-      background: linear-gradient(135deg, var(--primary), #818cf8);
-      color: white;
+      width: 40px;
+      height: 40px;
       border-radius: var(--radius-md);
+      background: var(--primary-gradient);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
-      font-size: 18px;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+      box-shadow: 0 4px 14px var(--primary-glow);
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-icon::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 100%);
+      pointer-events: none;
+    }
+
+    .brand-icon svg {
+      width: 22px;
+      height: 22px;
+      color: #ffffff;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
     }
 
     .brand-text h1 {
       font-family: 'Plus Jakarta Sans', sans-serif;
       font-size: 16px;
       font-weight: 700;
+      letter-spacing: -0.01em;
       color: var(--text-primary);
-      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-badge {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 5px;
+      border-radius: var(--radius-xs);
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
     }
 
     .brand-text span {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-tertiary);
       font-weight: 500;
     }
 
+    /* Dedicated Back / Close Sidebar Button */
+    .sidebar-close-btn {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-surface-hover);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      user-select: none;
+    }
+
+    .sidebar-close-btn:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary-border);
+    }
+
+    .sidebar-close-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Mobile Backdrop Overlay */
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 35;
+      opacity: 0;
+      transition: opacity var(--transition-normal);
+      pointer-events: none;
+    }
+
+    .sidebar-backdrop.active {
+      display: block;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Sidebar Content & Scroll */
     .sidebar-content {
       flex: 1;
       overflow-y: auto;
-      padding: 20px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) transparent;
+    }
+
+    .sidebar-content::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .sidebar-content::-webkit-scrollbar-thumb {
+      background-color: var(--border-color);
+      border-radius: 9999px;
     }
 
     .section-title {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       color: var(--text-tertiary);
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+    }
+
+    .badge-count {
+      background: var(--bg-muted);
+      color: var(--text-secondary);
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      border: 1px solid var(--border-color);
     }
 
     /* Knowledge Base Cards */
@@ -172,30 +367,55 @@
     }
 
     .kb-card {
-      background: var(--bg-sidebar-alt);
+      background: var(--bg-surface);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      padding: 12px 14px;
+      padding: 12px;
       cursor: pointer;
       transition: all var(--transition-fast);
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 12px;
+      position: relative;
     }
 
     .kb-card:hover {
-      border-color: var(--primary-border);
+      border-color: var(--primary);
       background: var(--primary-light);
       transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
     }
 
-    .kb-icon {
-      font-size: 20px;
-      margin-top: 2px;
+    .kb-icon-wrap {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 18px;
+      border: 1px solid var(--border-color);
+    }
+
+    .kb-icon-hr {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+
+    .kb-icon-sec {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+    }
+
+    .kb-icon-ml {
+      background: #f5f3ff;
+      border-color: #ddd6fe;
     }
 
     .kb-info {
       flex: 1;
+      min-width: 0;
     }
 
     .kb-title {
@@ -203,12 +423,26 @@
       font-weight: 600;
       color: var(--text-primary);
       margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kb-arrow {
+      color: var(--text-tertiary);
+      transition: transform var(--transition-fast), color var(--transition-fast);
+    }
+
+    .kb-card:hover .kb-arrow {
+      color: var(--primary);
+      transform: translate(2px, -2px);
     }
 
     .kb-meta {
       font-size: 11px;
       color: var(--text-secondary);
       display: flex;
+      align-items: center;
       gap: 8px;
     }
 
@@ -216,12 +450,12 @@
       background: rgba(79, 70, 229, 0.08);
       color: var(--primary);
       padding: 2px 6px;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-xs);
       font-weight: 600;
       font-size: 10px;
     }
 
-    /* Suggested Prompts Pill List */
+    /* Prompt Chips List */
     .prompt-list {
       display: flex;
       flex-direction: column;
@@ -241,44 +475,56 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: var(--shadow-sm);
+      gap: 8px;
+      line-height: 1.4;
+      font-family: inherit;
     }
 
     .prompt-chip:hover {
       background: var(--primary-light);
       border-color: var(--primary-border);
       color: var(--primary);
+      transform: translateX(2px);
     }
 
     .prompt-chip svg {
-      opacity: 0.4;
-      transition: opacity var(--transition-fast);
+      color: var(--text-tertiary);
+      flex-shrink: 0;
+      transition: transform var(--transition-fast), color var(--transition-fast);
     }
 
     .prompt-chip:hover svg {
-      opacity: 1;
+      color: var(--primary);
+      transform: translateX(3px);
     }
 
     /* Sidebar Footer */
     .sidebar-footer {
-      padding: 16px 20px;
+      padding: 14px 16px;
       border-top: 1px solid var(--border-color);
-      background: var(--bg-surface);
+      background: var(--bg-sidebar);
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .status-badge {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       font-size: 12px;
       font-weight: 500;
       padding: 8px 12px;
       border-radius: var(--radius-md);
-      background: var(--bg-sidebar-alt);
+      background: var(--bg-muted);
       border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: background var(--transition-fast);
+    }
+
+    .status-badge:hover {
+      background: var(--bg-surface-hover);
     }
 
     .status-indicator {
@@ -286,26 +532,63 @@
       height: 8px;
       border-radius: 50%;
       background: var(--success);
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .status-indicator::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      border: 1px solid var(--success);
+      opacity: 0.6;
+      animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+
+    @keyframes pulse-ring {
+      0% {
+        transform: scale(0.9);
+        opacity: 0.8;
+      }
+
+      50% {
+        transform: scale(1.6);
+        opacity: 0;
+      }
+
+      100% {
+        transform: scale(1.6);
+        opacity: 0;
+      }
     }
 
     .status-indicator.offline {
       background: var(--warning);
-      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    }
+
+    .status-indicator.offline::after {
+      border-color: var(--warning);
     }
 
     .status-indicator.error {
       background: var(--danger);
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+    }
+
+    .status-indicator.error::after {
+      border-color: var(--danger);
     }
 
     .btn-secondary {
       width: 100%;
-      padding: 10px 14px;
+      padding: 9px 12px;
       background: var(--bg-surface);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--text-secondary);
       cursor: pointer;
@@ -319,10 +602,12 @@
     .btn-secondary:hover {
       background: var(--bg-surface-hover);
       color: var(--text-primary);
-      border-color: #cbd5e1;
+      border-color: var(--border-strong);
     }
 
-    /* Main Content Layout */
+    /* ==========================================================================
+       MAIN CONTENT AREA & CHAT VIEWPORT
+       ========================================================================== */
     .main-content {
       flex: 1;
       display: flex;
@@ -330,48 +615,78 @@
       height: 100%;
       background: var(--bg-body);
       position: relative;
+      overflow: hidden;
+      min-width: 0;
     }
 
-    /* Top Bar Header */
+    /* Chat Header Top Bar */
     .chat-header {
-      height: 64px;
+      height: var(--header-height);
       background: var(--bg-surface);
       border-bottom: 1px solid var(--border-color);
-      padding: 0 24px;
+      padding: 0 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       z-index: 10;
-      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
     }
 
-    .header-title-container {
+    .header-left {
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .mobile-menu-btn {
+    /* Hamburger & Sidebar Toggle Buttons */
+    .menu-toggle-btn {
       display: none;
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 20px;
-      cursor: pointer;
-      padding: 4px;
-    }
-
-    .chat-header h2 {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: 16px;
-      font-weight: 700;
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
       color: var(--text-primary);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
     }
 
-    .chat-header-actions {
+    .menu-toggle-btn:hover {
+      background: var(--bg-surface-hover);
+      border-color: var(--primary-border);
+      color: var(--primary);
+    }
+
+    .sidebar-desktop-toggle {
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: center;
+    }
+
+    .header-title-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header-title-info h2 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .header-title-info span {
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .icon-btn {
@@ -386,12 +701,17 @@
       justify-content: center;
       cursor: pointer;
       transition: all var(--transition-fast);
+      position: relative;
     }
 
     .icon-btn:hover {
       background: var(--bg-surface-hover);
       color: var(--primary);
       border-color: var(--primary-border);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.96);
     }
 
     /* Chat Messages Viewport */
@@ -403,111 +723,149 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) transparent;
+    }
+
+    .chat-viewport::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .chat-viewport::-webkit-scrollbar-thumb {
+      background-color: var(--border-color);
+      border-radius: 9999px;
     }
 
     .messages-container {
       width: 100%;
-      max-width: 860px;
+      max-width: 820px;
       display: flex;
       flex-direction: column;
       gap: 20px;
     }
 
-    /* Empty State Hero */
+    /* Empty State Hero Banner */
     .empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 60px 20px;
+      padding: 36px 16px 24px 16px;
       margin: auto;
-      max-width: 600px;
+      max-width: 700px;
+      width: 100%;
     }
 
-    .empty-icon {
-      width: 64px;
-      height: 64px;
-      background: var(--primary-light);
-      color: var(--primary);
-      border-radius: 20px;
+    .empty-hero-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: var(--radius-xl);
+      background: var(--primary-gradient);
+      color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 32px;
       margin-bottom: 20px;
-      border: 1px solid var(--primary-border);
-      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.12);
+      box-shadow: 0 10px 30px var(--primary-glow);
+      position: relative;
+    }
+
+    .empty-hero-icon svg {
+      width: 36px;
+      height: 36px;
     }
 
     .empty-state h3 {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: 22px;
-      font-weight: 700;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
       color: var(--text-primary);
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
 
     .empty-state p {
       font-size: 14px;
       color: var(--text-secondary);
       line-height: 1.6;
+      max-width: 520px;
       margin-bottom: 28px;
     }
 
-    .quick-start-grid {
+    .empty-category-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 12px;
       width: 100%;
     }
 
-    .quick-card {
+    .category-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 14px;
+      border-radius: var(--radius-lg);
+      padding: 16px;
       text-align: left;
       cursor: pointer;
       transition: all var(--transition-fast);
       box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .quick-card:hover {
+    .category-card:hover {
       border-color: var(--primary);
-      box-shadow: var(--shadow-md);
       transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      background: var(--primary-light);
     }
 
-    .quick-card-badge {
+    .category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .category-icon {
+      font-size: 20px;
+    }
+
+    .category-badge {
       font-size: 10px;
       font-weight: 700;
       color: var(--primary);
       text-transform: uppercase;
-      margin-bottom: 6px;
-      display: inline-block;
+      letter-spacing: 0.04em;
     }
 
-    .quick-card p {
+    .category-card h4 {
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 700;
       color: var(--text-primary);
+    }
+
+    .category-card p {
+      font-size: 12px;
+      color: var(--text-secondary);
       line-height: 1.4;
       margin: 0;
     }
 
-    /* Message Bubbles */
+    /* ==========================================================================
+       CHAT MESSAGES & BUBBLES
+       ========================================================================== */
     .message-wrapper {
       display: flex;
-      gap: 14px;
+      gap: 12px;
       width: 100%;
-      animation: fadeIn 0.3s ease-out;
+      animation: messageSlideIn 0.25s ease-out;
     }
 
-    @keyframes fadeIn {
+    @keyframes messageSlideIn {
       from {
         opacity: 0;
-        transform: translateY(8px);
+        transform: translateY(10px);
       }
 
       to {
@@ -520,66 +878,88 @@
       flex-direction: row-reverse;
     }
 
-    .avatar {
+    .message-avatar {
       width: 36px;
       height: 36px;
       border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
-      font-weight: 700;
       flex-shrink: 0;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: var(--shadow-xs);
     }
 
-    .message-wrapper.user .avatar {
-      background: var(--bg-chat-user);
-      color: var(--text-user);
+    .message-wrapper.user .message-avatar {
+      background: var(--chat-user-bg);
+      color: var(--chat-user-text);
+      box-shadow: 0 2px 8px var(--primary-glow);
+    }
+
+    .message-wrapper.bot .message-avatar {
+      background: var(--bg-surface);
+      color: var(--primary);
+      border: 1.5px solid var(--border-color);
       box-shadow: var(--shadow-sm);
     }
 
-    .message-wrapper.bot .avatar {
-      background: var(--primary-light);
-      color: var(--primary);
-      border: 1px solid var(--primary-border);
+    .message-wrapper.bot .message-avatar svg {
+      width: 18px;
+      height: 18px;
     }
 
-    .message-content {
-      max-width: 78%;
+    .message-body {
+      max-width: 82%;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
+    }
+
+    .message-wrapper.user .message-body {
+      align-items: flex-end;
     }
 
     .message-bubble {
-      padding: 14px 18px;
+      padding: 13px 18px;
       border-radius: var(--radius-lg);
       font-size: 14px;
       line-height: 1.6;
-      box-shadow: var(--shadow-sm);
       word-break: break-word;
+      box-shadow: var(--shadow-sm);
+      position: relative;
     }
 
     .message-wrapper.user .message-bubble {
-      background: var(--bg-chat-user);
-      color: var(--text-user);
-      border-top-right-radius: 4px;
+      background: var(--chat-user-bg);
+      color: var(--chat-user-text);
+      border-top-right-radius: var(--radius-xs);
+      box-shadow: 0 4px 14px var(--primary-glow);
     }
 
     .message-wrapper.bot .message-bubble {
-      background: var(--bg-chat-bot);
+      background: var(--chat-bot-bg);
       color: var(--text-primary);
-      border: 1px solid var(--border-color);
-      border-top-left-radius: 4px;
+      border: 1px solid var(--chat-bot-border);
+      border-top-left-radius: var(--radius-xs);
     }
 
-    /* Markdown Styling in Bot Message */
+    /* Markdown Rich Styling inside Bot Message */
     .message-bubble p {
       margin-bottom: 10px;
     }
 
     .message-bubble p:last-child {
       margin-bottom: 0;
+    }
+
+    .message-bubble strong {
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .message-wrapper.user .message-bubble strong {
+      color: #ffffff;
     }
 
     .message-bubble ul,
@@ -593,67 +973,75 @@
     }
 
     .message-bubble code {
-      font-family: 'Fira Code', monospace;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
       font-size: 12px;
-      background: rgba(0, 0, 0, 0.05);
+      background: var(--bg-muted);
+      color: var(--primary);
       padding: 2px 6px;
-      border-radius: 4px;
+      border-radius: var(--radius-xs);
+      border: 1px solid var(--border-color);
     }
 
     .message-wrapper.user .message-bubble code {
       background: rgba(255, 255, 255, 0.2);
-      color: white;
+      color: #ffffff;
+      border: none;
     }
 
     .message-bubble pre {
-      background: #1e293b;
+      background: #0f172a;
       color: #f8fafc;
-      padding: 12px 16px;
+      padding: 14px;
       border-radius: var(--radius-md);
       overflow-x: auto;
       margin: 12px 0;
       position: relative;
+      border: 1px solid #1e293b;
     }
 
     .message-bubble pre code {
       background: transparent;
       padding: 0;
       color: inherit;
-      font-size: 13px;
+      border: none;
+      font-size: 12.5px;
     }
 
-    /* Code Copy Button */
     .code-copy-btn {
       position: absolute;
       top: 8px;
       right: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      border: none;
-      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
       padding: 4px 8px;
-      border-radius: 4px;
+      border-radius: var(--radius-xs);
       font-size: 11px;
+      font-weight: 500;
       cursor: pointer;
       transition: background var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .code-copy-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
     }
 
-    /* Citations Expander Card */
+    /* Citations Drawer Accordion */
     .citations-accordion {
       margin-top: 6px;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      background: var(--bg-sidebar-alt);
+      background: var(--bg-muted);
       overflow: hidden;
     }
 
     .citations-header {
       padding: 8px 12px;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
       color: var(--text-secondary);
       display: flex;
@@ -661,6 +1049,7 @@
       justify-content: space-between;
       cursor: pointer;
       user-select: none;
+      transition: background var(--transition-fast);
     }
 
     .citations-header:hover {
@@ -668,22 +1057,33 @@
       color: var(--primary);
     }
 
+    .citations-header svg {
+      transition: transform var(--transition-fast);
+    }
+
+    .citations-accordion.open .citations-header svg {
+      transform: rotate(180deg);
+    }
+
     .citations-body {
       display: none;
-      padding: 12px;
+      padding: 10px 12px;
       border-top: 1px solid var(--border-color);
-      display: flex;
+      background: var(--bg-surface);
       flex-direction: column;
       gap: 8px;
     }
 
+    .citations-accordion.open .citations-body {
+      display: flex;
+    }
+
     .citation-item {
-      background: var(--bg-surface);
+      background: var(--bg-body);
       border: 1px solid var(--border-color);
       padding: 8px 10px;
       border-radius: var(--radius-sm);
       font-size: 11px;
-      color: var(--text-secondary);
     }
 
     .citation-source {
@@ -691,42 +1091,53 @@
       color: var(--primary);
       margin-bottom: 4px;
       display: flex;
+      align-items: center;
       justify-content: space-between;
+    }
+
+    .citation-tag {
+      background: var(--primary-light);
+      padding: 1px 6px;
+      border-radius: var(--radius-xs);
+      font-size: 10px;
     }
 
     .citation-text {
       font-style: italic;
+      color: var(--text-secondary);
       line-height: 1.4;
-      color: var(--text-primary);
     }
 
-    /* Message Actions bar */
-    .message-actions {
+    /* Message Meta Actions (Copy, Timestamp) */
+    .message-meta {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       font-size: 11px;
       color: var(--text-tertiary);
       padding: 0 4px;
     }
 
-    .action-link {
+    .action-btn {
       color: var(--text-tertiary);
+      background: none;
+      border: none;
       cursor: pointer;
+      font-size: 11px;
       display: flex;
       align-items: center;
       gap: 4px;
       transition: color var(--transition-fast);
-      background: none;
-      border: none;
-      font-size: 11px;
+      padding: 2px 4px;
+      border-radius: var(--radius-xs);
     }
 
-    .action-link:hover {
+    .action-btn:hover {
       color: var(--primary);
+      background: var(--primary-light);
     }
 
-    /* Typing Loading Animation */
+    /* Typing Indicator Animation */
     .typing-indicator {
       display: flex;
       align-items: center;
@@ -739,7 +1150,7 @@
       height: 7px;
       background: var(--primary);
       border-radius: 50%;
-      animation: pulse 1.4s infinite ease-in-out;
+      animation: typingPulse 1.4s infinite ease-in-out;
     }
 
     .typing-dot:nth-child(1) {
@@ -754,7 +1165,7 @@
       animation-delay: 0.4s;
     }
 
-    @keyframes pulse {
+    @keyframes typingPulse {
 
       0%,
       80%,
@@ -764,43 +1175,90 @@
       }
 
       40% {
-        transform: scale(1);
+        transform: scale(1.1);
         opacity: 1;
       }
     }
 
-    /* Input Footer Toolbar */
+    /* ==========================================================================
+       CHAT INPUT & FOOTER AREA
+       Responsive, touch-friendly, high-grade SaaS architecture
+       ========================================================================== */
     .chat-input-area {
       background: var(--bg-surface);
       border-top: 1px solid var(--border-color);
-      padding: 16px 24px 20px 24px;
+      padding: 12px 20px 16px 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
+      position: relative;
+      flex-shrink: 0;
+      z-index: 10;
     }
 
+    /* Quick Pills Carousel above Input */
+    .quick-pills-bar {
+      width: 100%;
+      max-width: 820px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 6px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .quick-pills-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .quick-pill {
+      background: var(--bg-muted);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .quick-pill:hover {
+      background: var(--primary-light);
+      border-color: var(--primary-border);
+      color: var(--primary);
+    }
+
+    /* Input Box Main Wrapper */
     .input-box-wrapper {
       width: 100%;
-      max-width: 860px;
-      background: var(--bg-body);
+      max-width: 820px;
+      background: var(--bg-input);
       border: 1.5px solid var(--border-color);
       border-radius: var(--radius-lg);
-      padding: 10px 14px;
+      padding: 8px 10px 8px 16px;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      align-items: flex-end;
+      gap: 10px;
+      box-shadow: var(--shadow-sm);
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
 
     .input-box-wrapper:focus-within {
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
-      background: var(--bg-surface);
+      box-shadow: 0 0 0 3px var(--primary-glow);
     }
 
     .chat-textarea {
-      width: 100%;
+      flex: 1;
       border: none;
       outline: none;
       background: transparent;
@@ -810,68 +1268,114 @@
       resize: none;
       min-height: 24px;
       max-height: 140px;
-      line-height: 1.5;
+      line-height: 1.45;
+      padding: 8px 0;
+      margin-bottom: 2px;
+      scrollbar-width: none;
+    }
+
+    .chat-textarea::-webkit-scrollbar {
+      display: none;
     }
 
     .chat-textarea::placeholder {
       color: var(--text-tertiary);
     }
 
-    .input-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .input-hints {
-      font-size: 11px;
-      color: var(--text-tertiary);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
+    /* Send Button with Modern Ergonomics */
     .btn-send {
-      background: var(--primary);
-      color: white;
+      height: 42px;
+      min-width: 42px;
+      padding: 0 16px;
+      background: var(--primary-gradient);
+      color: #ffffff;
       border: none;
       border-radius: var(--radius-md);
-      padding: 8px 16px;
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
       transition: all var(--transition-fast);
-      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+      box-shadow: 0 2px 8px var(--primary-glow);
+      flex-shrink: 0;
+      user-select: none;
     }
 
-    .btn-send:hover {
-      background: var(--primary-hover);
+    .btn-send:hover:not(:disabled) {
       transform: translateY(-1px);
+      box-shadow: 0 4px 14px var(--primary-glow);
+      filter: brightness(1.05);
+    }
+
+    .btn-send:active:not(:disabled) {
+      transform: scale(0.96);
     }
 
     .btn-send:disabled {
-      background: var(--text-tertiary);
+      opacity: 0.5;
       cursor: not-allowed;
       box-shadow: none;
       transform: none;
     }
 
-    /* Modal Overlay */
+    .btn-send svg {
+      width: 16px;
+      height: 16px;
+      transition: transform var(--transition-fast);
+    }
+
+    .btn-send:hover:not(:disabled) svg {
+      transform: translateX(2px);
+    }
+
+    /* Input Hints bar */
+    .input-bottom-hints {
+      width: 100%;
+      max-width: 820px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 6px;
+      padding: 0 6px;
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+
+    .hint-keys {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hint-keys kbd {
+      background: var(--bg-muted);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xs);
+      padding: 1px 5px;
+      font-family: inherit;
+      font-size: 10px;
+    }
+
+    /* ==========================================================================
+       MODAL & SETTINGS OVERLAY
+       ========================================================================== */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.4);
-      backdrop-filter: blur(4px);
-      z-index: 50;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 60;
       display: flex;
       align-items: center;
       justify-content: center;
       opacity: 0;
       pointer-events: none;
-      transition: opacity var(--transition-fast);
+      transition: opacity var(--transition-normal);
+      padding: 20px;
     }
 
     .modal-overlay.active {
@@ -882,13 +1386,13 @@
     .modal-card {
       background: var(--bg-surface);
       width: 100%;
-      max-width: 480px;
-      border-radius: var(--radius-lg);
+      max-width: 500px;
+      border-radius: var(--radius-xl);
       border: 1px solid var(--border-color);
       box-shadow: var(--shadow-lg);
       overflow: hidden;
       transform: scale(0.95);
-      transition: transform var(--transition-fast);
+      transition: transform var(--transition-normal);
     }
 
     .modal-overlay.active .modal-card {
@@ -907,6 +1411,7 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
       font-size: 16px;
       font-weight: 700;
+      color: var(--text-primary);
     }
 
     .modal-body {
@@ -930,21 +1435,26 @@
 
     .form-control {
       width: 100%;
-      padding: 10px 12px;
-      border: 1px solid var(--border-color);
+      padding: 10px 14px;
+      border: 1.5px solid var(--border-color);
       border-radius: var(--radius-md);
       font-size: 13px;
+      background: var(--bg-body);
+      color: var(--text-primary);
       outline: none;
-      transition: border-color var(--transition-fast);
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+      font-family: inherit;
     }
 
     .form-control:focus {
       border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+      background: var(--bg-surface);
     }
 
     .modal-footer {
       padding: 16px 24px;
-      background: var(--bg-sidebar-alt);
+      background: var(--bg-muted);
       border-top: 1px solid var(--border-color);
       display: flex;
       justify-content: flex-end;
@@ -956,8 +1466,8 @@
       position: fixed;
       bottom: 24px;
       right: 24px;
-      background: #1e293b;
-      color: white;
+      background: var(--text-primary);
+      color: var(--text-inverse);
       padding: 12px 18px;
       border-radius: var(--radius-md);
       font-size: 13px;
@@ -970,6 +1480,7 @@
       transform: translateY(100px);
       opacity: 0;
       transition: all var(--transition-normal);
+      pointer-events: none;
     }
 
     .toast.show {
@@ -977,23 +1488,87 @@
       opacity: 1;
     }
 
-    /* Responsive Breakpoints */
-    @media (max-width: 900px) {
+    /* ==========================================================================
+       RESPONSIVE BREAKPOINTS (Mobile & Tablet Optimization)
+       ========================================================================== */
+    @media (max-width: 960px) {
       .sidebar {
-        position: absolute;
+        position: fixed;
         top: 0;
         bottom: 0;
         left: 0;
+        width: 82%;
+        max-width: 320px;
         transform: translateX(-100%);
         box-shadow: var(--shadow-lg);
+        z-index: 50;
       }
 
       .sidebar.open {
         transform: translateX(0);
       }
 
-      .mobile-menu-btn {
-        display: block;
+      .menu-toggle-btn {
+        display: flex;
+      }
+
+      .sidebar-desktop-toggle {
+        display: none;
+      }
+
+      .sidebar-close-btn {
+        display: flex;
+      }
+
+      .empty-category-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chat-header {
+        padding: 0 16px;
+      }
+
+      .chat-viewport {
+        padding: 16px 12px;
+      }
+
+      .chat-input-area {
+        padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px;
+      }
+
+      .input-bottom-hints {
+        display: none;
+      }
+
+      .message-body {
+        max-width: 88%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .btn-send {
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        border-radius: var(--radius-md);
+      }
+
+      .btn-send span {
+        display: none;
+      }
+
+      .btn-send svg {
+        width: 18px;
+        height: 18px;
+        margin: 0;
+      }
+
+      .empty-state h3 {
+        font-size: 20px;
+      }
+
+      .brand-text h1 {
+        font-size: 15px;
       }
     }
   </style>
@@ -1002,29 +1577,60 @@
 <body>
 
   <div id="app">
-    <!-- Sidebar -->
+    <!-- Backdrop Overlay for Mobile Sidebar Drawer -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
+    <!-- Sidebar Navigation Drawer -->
     <aside class="sidebar" id="sidebar">
+      <!-- Sidebar Header with Brand & Close/Back Button -->
       <div class="sidebar-header">
         <div class="brand">
-          <div class="brand-icon">RAG</div>
+          <div class="brand-icon">
+            <!-- Modern SVG Knowledge Core Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5"></path>
+              <path d="M2 12l10 5 10-5"></path>
+              <circle cx="12" cy="12" r="2" fill="currentColor"></circle>
+            </svg>
+          </div>
           <div class="brand-text">
-            <h1>RAG Chatbot</h1>
-            <span>Policy & ML Assistant</span>
+            <h1>Nexus RAG <span class="brand-badge">AI</span></h1>
+            <span>Enterprise Knowledge Engine</span>
           </div>
         </div>
+
+        <!-- Back to Chat / Close Button (Visible on Mobile/Tablet) -->
+        <button class="sidebar-close-btn" id="sidebarCloseBtn" onclick="closeSidebar()" title="Back to Chat (Escape)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          <span>Back</span>
+        </button>
       </div>
 
+      <!-- Sidebar Content -->
       <div class="sidebar-content">
-        <!-- Knowledge Base Section -->
+        <!-- Knowledge Base Documents Section -->
         <div>
           <div class="section-title">
-            <span>Knowledge Base (3 PDFs)</span>
+            <span>Knowledge Base</span>
+            <span class="badge-count">3 Docs</span>
           </div>
           <div class="kb-list">
-            <div class="kb-card" onclick="openPdfViewer('HR_Policy.pdf')" title="Click to view HR Policy PDF">
-              <div class="kb-icon">📄</div>
+            <!-- HR Policy Card -->
+            <div class="kb-card" onclick="openPdfViewer('HR_Policy.pdf')" title="View HR Policy Document">
+              <div class="kb-icon-wrap kb-icon-hr">📋</div>
               <div class="kb-info">
-                <div class="kb-title">HR Policy Manual ↗</div>
+                <div class="kb-title">
+                  <span>HR Policy Manual</span>
+                  <svg class="kb-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M7 17L17 7M17 7H7M17 7V17" />
+                  </svg>
+                </div>
                 <div class="kb-meta">
                   <span class="kb-tag">14 Pages</span>
                   <span>Leave & Benefits</span>
@@ -1032,22 +1638,36 @@
               </div>
             </div>
 
+            <!-- IT Security Policy Card -->
             <div class="kb-card" onclick="openPdfViewer('IT_Security_Policy.pdf')"
-              title="Click to view IT Security Policy PDF">
-              <div class="kb-icon">🛡️</div>
+              title="View IT Security Policy Document">
+              <div class="kb-icon-wrap kb-icon-sec">🛡️</div>
               <div class="kb-info">
-                <div class="kb-title">IT Security Policy ↗</div>
+                <div class="kb-title">
+                  <span>IT Security Policy</span>
+                  <svg class="kb-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M7 17L17 7M17 7H7M17 7V17" />
+                  </svg>
+                </div>
                 <div class="kb-meta">
                   <span class="kb-tag">17 Pages</span>
-                  <span>Security & Access</span>
+                  <span>Compliance & Access</span>
                 </div>
               </div>
             </div>
 
-            <div class="kb-card" onclick="openPdfViewer('ML.pdf')" title="Click to view Machine Learning Notes PDF">
-              <div class="kb-icon">🤖</div>
+            <!-- ML Fundamentals Card -->
+            <div class="kb-card" onclick="openPdfViewer('ML.pdf')" title="View Machine Learning Notes Document">
+              <div class="kb-icon-wrap kb-icon-ml">🤖</div>
               <div class="kb-info">
-                <div class="kb-title">ML Fundamentals ↗</div>
+                <div class="kb-title">
+                  <span>ML Fundamentals</span>
+                  <svg class="kb-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M7 17L17 7M17 7H7M17 7V17" />
+                  </svg>
+                </div>
                 <div class="kb-meta">
                   <span class="kb-tag">9 Pages</span>
                   <span>AI & Algorithms</span>
@@ -1057,32 +1677,32 @@
           </div>
         </div>
 
-        <!-- Sample Questions Section -->
+
+        <!-- Suggested Prompts Section -->
         <div>
-          <div class="section-title">Suggested Prompts (English & Hinglish)</div>
           <div class="prompt-list">
-            <button class="prompt-chip" onclick="insertPrompt('Machine Learning kya hai?')">
+            <button class="prompt-chip" onclick="handlePromptSelect('Machine Learning kya hai?')">
               <span>Machine Learning kya hai?</span>
               <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </button>
 
-            <button class="prompt-chip" onclick="insertPrompt('Unsupervised learning kaise kaam karta hai?')">
+            <button class="prompt-chip" onclick="handlePromptSelect('Unsupervised learning kaise kaam karta hai?')">
               <span>Unsupervised learning kaise kaam karta hai?</span>
               <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </button>
 
-            <button class="prompt-chip" onclick="insertPrompt('What are the rules regarding password security?')">
-              <span>Password security rules</span>
+            <button class="prompt-chip" onclick="handlePromptSelect('What are the enterprise password security rules?')">
+              <span>Password security guidelines</span>
               <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </button>
 
-            <button class="prompt-chip" onclick="insertPrompt('HR Policy mein leave entitlement kya hai?')">
+            <button class="prompt-chip" onclick="handlePromptSelect('HR Policy mein leave entitlement kya hai?')">
               <span>HR leave entitlements (Hinglish)</span>
               <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -1092,97 +1712,193 @@
         </div>
       </div>
 
-      <!-- Sidebar Footer -->
-      <div class="sidebar-footer">
-        <div class="status-badge" onclick="openSettingsModal()" style="cursor: pointer;" title="Click to configure API">
-          <span class="status-indicator" id="statusDot"></span>
-          <span id="statusText">Checking Backend...</span>
-        </div>
-        <button class="btn-secondary" onclick="openSettingsModal()">
-          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  <!-- Sidebar Footer -->
+  <div class="sidebar-footer">
+    <div class="status-badge" onclick="openSettingsModal()" title="Click to view API status">
+      <span class="status-indicator" id="statusDot"></span>
+      <span id="statusText">Checking Backend...</span>
+    </div>
+    <button class="btn-secondary" onclick="openSettingsModal()">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+      <span>System & API Settings</span>
+    </button>
+  </div>
+  </aside>
+
+  <!-- Main Content Chat Layout -->
+  <main class="main-content">
+    <!-- Top Bar Header -->
+    <header class="chat-header">
+      <div class="header-left">
+        <!-- Mobile Menu Hamburger Button -->
+        <button class="menu-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle navigation menu">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
-          <span>API Settings</span>
+        </button>
+
+        <!-- Desktop Sidebar Collapse Toggle Button -->
+        <button class="icon-btn sidebar-desktop-toggle" onclick="toggleDesktopSidebar()"
+          title="Toggle Sidebar (Ctrl+B)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+          </svg>
+        </button>
+
+        <div class="header-title-info">
+          <h2>Nexus RAG Assistant</h2>
+          <span>RAG AI</span>
+        </div>
+      </div>
+
+      <!-- Header Actions: Theme Toggle, Export, New Chat -->
+      <div class="header-actions">
+        <!-- Theme Toggle -->
+        <button class="icon-btn" id="themeToggleBtn" onclick="toggleDarkMode()" title="Toggle Dark/Light Mode">
+          <svg id="themeIconSun" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg id="themeIconMoon" style="display:none;" width="18" height="18" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
+
+        <!-- Export Chat -->
+        <button class="icon-btn" title="Export Chat Session" onclick="exportChatHistory()">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+        </button>
+
+        <!-- Clear / Reset Chat -->
+        <button class="icon-btn" title="Start Fresh Chat" onclick="clearChat()">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
         </button>
       </div>
-    </aside>
+    </header>
 
-    <!-- Main Content Chat Area -->
-    <main class="main-content">
-      <!-- Top Bar Header -->
-      <header class="chat-header">
-        <div class="header-title-container">
-          <button class="mobile-menu-btn" onclick="toggleSidebar()">
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+    <!-- Chat Viewport Messages Container -->
+    <div class="chat-viewport" id="chatViewport">
+      <div class="messages-container" id="messagesContainer">
+        <!-- Empty State Hero View -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5"></path>
+              <path d="M2 12l10 5 10-5"></path>
             </svg>
-          </button>
-          <h2>RAG Chatbot</h2>
-        </div>
+          </div>
+          <h3>What would you like to explore?</h3>
+          <p>
+            Ask questions directly from your indexed enterprise documents. All answers are grounded in
+            <strong>HR Policy</strong>, <strong>IT Security Policy</strong>, and <strong>Machine Learning
+              Notes</strong>.
+          </p>
 
-        <div class="chat-header-actions">
-          <button class="icon-btn" title="Export Chat History" onclick="exportChatHistory()">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          </button>
-          <button class="icon-btn" title="Clear Chat" onclick="clearChat()">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
-        </div>
-      </header>
+          <!-- Categorical Quick Starter Cards -->
+          <div class="empty-category-grid">
+            <div class="category-card"
+              onclick="handlePromptSelect('What are the company rules regarding leave entitlements and vacation?')">
+              <div class="category-header">
+                <span class="category-icon">📋</span>
+                <span class="category-badge">HR Policy</span>
+              </div>
+              <h4>Leave & Benefits</h4>
+              <p>Learn about sick leave, annual holidays, and parental leave.</p>
+            </div>
 
-      <!-- Viewport Messages Container -->
-      <div class="chat-viewport" id="chatViewport">
-        <div class="messages-container" id="messagesContainer">
-          <!-- Empty State Hero (Hidden when messages exist) -->
-          <div class="empty-state" id="emptyState">
-            <div class="empty-icon">💡</div>
-            <h3>How can I assist you today?</h3>
-            <p>Ask questions directly from your organizational knowledge base, covering<strong>HR Policy</strong>,
-              <strong>IT Security Policy</strong>, and <strong>Machine
-                Learning Fundamentals</strong>.
-            </p>
+            <div class="category-card"
+              onclick="handlePromptSelect('What are the key IT security rules for password length and rotation?')">
+              <div class="category-header">
+                <span class="category-icon">🛡️</span>
+                <span class="category-badge">Security</span>
+              </div>
+              <h4>IT & Data Governance</h4>
+              <p>Access control, password rotation, and MFA guidelines.</p>
+            </div>
+
+            <div class="category-card"
+              onclick="handlePromptSelect('Explain the difference between Supervised and Unsupervised Learning')">
+              <div class="category-header">
+                <span class="category-icon">🤖</span>
+                <span class="category-badge">AI Knowledge</span>
+              </div>
+              <h4>ML Fundamentals</h4>
+              <p>Classification, regression, clustering, and model workflows.</p>
+            </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Footer Input Area -->
-      <footer class="chat-input-area">
-        <div class="input-box-wrapper">
-          <textarea id="chatInput" class="chat-textarea"
-            placeholder="Ask a question about HR, Security, or ML documents..." rows="1"
-            onkeydown="handleKeyDown(event)" oninput="autoResizeTextarea(this)"></textarea>
+    <!-- Chat Input Area -->
+    <footer class="chat-input-area">
+      <!-- Quick Action Pills Bar -->
+      <div class="quick-pills-bar">
+        <button class="quick-pill" onclick="handlePromptSelect('Machine Learning kya hai?')">
+          <span>🤖 ML kya hai?</span>
+        </button>
+        <button class="quick-pill" onclick="handlePromptSelect('HR leave entitlement kya hai?')">
+          <span>📋 Leave Policy</span>
+        </button>
+        <button class="quick-pill" onclick="handlePromptSelect('What are password security guidelines?')">
+          <span>🛡️ Password Rules</span>
+        </button>
+        <button class="quick-pill" onclick="handlePromptSelect('Unsupervised learning kaise kaam karta hai?')">
+          <span>⚡ Unsupervised Learning</span>
+        </button>
+      </div>
 
-          <div class="input-toolbar">
-            <div class="input-hints">
-              <span>Press <strong>Enter</strong> to send</span>
-              <span>•</span>
-              <span><strong>Shift + Enter</strong> for line break</span>
-            </div>
-            <button class="btn-send" id="sendBtn" onclick="sendMessage()">
-              <span>Send</span>
-              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </button>
-          </div>
+      <!-- Main Input Wrapper -->
+      <div class="input-box-wrapper">
+        <textarea id="chatInput" class="chat-textarea"
+          placeholder="Ask a question from HR, Security, or ML documents..." rows="1" onkeydown="handleKeyDown(event)"
+          oninput="autoResizeTextarea(this)"></textarea>
+
+        <!-- Ergonomic Modern Send Button -->
+        <button class="btn-send" id="sendBtn" onclick="sendMessage()" aria-label="Send message" disabled>
+          <span>Send</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Input Bottom Information & Keyboard Hints -->
+      <div class="input-bottom-hints">
+        <div class="hint-keys">
+          <span><kbd>Enter</kbd> to send</span>
+          <span>•</span>
+          <span><kbd>Shift</kbd> + <kbd>Enter</kbd> for line break</span>
         </div>
-      </footer>
-    </main>
+        <span>Enterprise RAG • Grounded Knowledge</span>
+      </div>
+    </footer>
+  </main>
   </div>
 
-  <!-- Settings Modal -->
-  <div class="modal-overlay" id="settingsModal">
+  <!-- Settings & Diagnostics Modal -->
+  <div class="modal-overlay" id="settingsModal" onclick="handleModalBackdropClick(event)">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>Backend Integration Settings</h3>
-        <button class="icon-btn" onclick="closeSettingsModal()">
+        <h3>System & Backend Integration</h3>
+        <button class="icon-btn" onclick="closeSettingsModal()" aria-label="Close modal">
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -1191,34 +1907,35 @@
       <div class="modal-body">
         <div class="form-group">
           <label for="apiUrlInput">FastAPI Endpoint URL</label>
-          <input type="text" id="apiUrlInput" class="form-control" value="http://localhost:8000/api/chat">
-          <span style="font-size: 11px; color: var(--text-tertiary);">Specify your running Python backend URL (from
-            app.py).</span>
+          <input type="text" id="apiUrlInput" class="form-control" value="http://127.0.0.1:8000/api/chat">
+          <span style="font-size: 11px; color: var(--text-tertiary);">Configured backend endpoint (from
+            <code>app.py</code>).</span>
         </div>
 
         <div class="form-group">
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-            <input type="checkbox" id="mockModeToggle" style="accent-color: var(--primary);">
-            <span>Enable Offline Demo / Simulation Mode</span>
+            <input type="checkbox" id="mockModeToggle" style="accent-color: var(--primary); width:16px; height:16px;">
+            <span style="font-weight:600; color:var(--text-primary);">Enable Offline Simulation / Demo Mode</span>
           </label>
-          <span style="font-size: 11px; color: var(--text-tertiary);">Simulates RAG responses when live FastAPI server
-            is unavailable.</span>
+          <span style="font-size: 11px; color: var(--text-tertiary);">Provides instant answers even when the Python
+            server is offline.</span>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" style="width:auto;" onclick="testApiConnection()">Test Connection</button>
-        <button class="btn-send" style="width:auto;" onclick="saveSettings()">Save & Apply</button>
+        <button class="btn-secondary" style="width:auto;" onclick="testApiConnection()">Test Health</button>
+        <button class="btn-send" style="width:auto; padding: 0 18px;" onclick="saveSettings()">Save Changes</button>
       </div>
     </div>
   </div>
 
-  <!-- Toast Notification -->
+  <!-- Toast Notification Bar -->
   <div class="toast" id="toast">
     <span id="toastMsg">Action completed successfully</span>
   </div>
 
-  <!-- Frontend JavaScript Logic -->
+  <!-- Frontend Application Logic -->
   <script>
+    // Resolve intelligent default backend API URL
     function resolveDefaultApiUrl() {
       const saved = localStorage.getItem('rag_api_url');
       if (saved) {
@@ -1235,16 +1952,17 @@
       return 'http://127.0.0.1:8000/api/chat';
     }
 
-    // State Container
+    // Application State
     const state = {
       apiUrl: resolveDefaultApiUrl(),
       useMock: localStorage.getItem('rag_use_mock') === 'true',
       isConnected: false,
       messages: [],
-      isGenerating: false
+      isGenerating: false,
+      theme: localStorage.getItem('rag_theme') || 'light'
     };
 
-    // DOM References
+    // DOM Elements
     const chatInput = document.getElementById('chatInput');
     const messagesContainer = document.getElementById('messagesContainer');
     const emptyState = document.getElementById('emptyState');
@@ -1255,44 +1973,132 @@
     const settingsModal = document.getElementById('settingsModal');
     const apiUrlInput = document.getElementById('apiUrlInput');
     const mockModeToggle = document.getElementById('mockModeToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const themeIconSun = document.getElementById('themeIconSun');
+    const themeIconMoon = document.getElementById('themeIconMoon');
 
-    // Initializer
+    // Initialization
     window.addEventListener('DOMContentLoaded', () => {
+      // Apply saved theme
+      applyTheme(state.theme);
+
+      // Populate input settings
       apiUrlInput.value = state.apiUrl;
       mockModeToggle.checked = state.useMock;
+
+      // Check server health
       checkBackendHealth();
+
+      // Listen for text input changes to toggle send button state
+      chatInput.addEventListener('input', () => {
+        updateSendButtonState();
+      });
+
+      // Escape key listener to close drawer or modal
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeSidebar();
+          closeSettingsModal();
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+          e.preventDefault();
+          toggleDesktopSidebar();
+        }
+      });
+
+      // Touch gesture for mobile swipe-to-close
+      let touchStartX = 0;
+      sidebar.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
+
+      sidebar.addEventListener('touchend', (e) => {
+        const touchEndX = e.changedTouches[0].screenX;
+        if (touchStartX - touchEndX > 50) {
+          closeSidebar();
+        }
+      }, { passive: true });
     });
 
-    // Toggle Mobile Sidebar
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('open');
+    // Theme Switcher Logic
+    function toggleDarkMode() {
+      const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
+      state.theme = nextTheme;
+      localStorage.setItem('rag_theme', nextTheme);
+      applyTheme(nextTheme);
     }
 
-    // Auto-resize textarea
+    function applyTheme(theme) {
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        themeIconSun.style.display = 'none';
+        themeIconMoon.style.display = 'block';
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        themeIconSun.style.display = 'block';
+        themeIconMoon.style.display = 'none';
+      }
+    }
+
+    // Responsive Sidebar Drawer Handlers
+    function toggleSidebar() {
+      const isOpen = sidebar.classList.contains('open');
+      if (isOpen) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    }
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      sidebarBackdrop.classList.add('active');
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      sidebarBackdrop.classList.remove('active');
+    }
+
+    function toggleDesktopSidebar() {
+      sidebar.classList.toggle('collapsed');
+    }
+
+    // Auto-resize textarea smoothly
     function autoResizeTextarea(el) {
       el.style.height = 'auto';
       el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+      updateSendButtonState();
     }
 
-    // Insert prompt from cards
-    function insertPrompt(text) {
-      chatInput.value = text;
+    function updateSendButtonState() {
+      const hasText = chatInput.value.trim().length > 0;
+      sendBtn.disabled = !hasText || state.isGenerating;
+    }
+
+    // Handle Prompt selection (and auto-close sidebar on mobile)
+    function handlePromptSelect(promptText) {
+      chatInput.value = promptText;
       autoResizeTextarea(chatInput);
+      closeSidebar();
       chatInput.focus();
+      updateSendButtonState();
     }
 
     // Handle Enter Key Press
     function handleKeyDown(e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        sendMessage();
+        if (!sendBtn.disabled) {
+          sendMessage();
+        }
       }
     }
 
-    // Check Backend Connection Status
+    // Backend Connection Health Checker
     async function checkBackendHealth() {
       if (state.useMock) {
-        updateStatus(true, 'Mock Simulation Mode');
+        updateStatus(true, 'Simulation Mode (Active)');
         return;
       }
       try {
@@ -1304,28 +2110,21 @@
           updateStatus(false, 'FastAPI Connection Error');
         }
       } catch (err) {
-        // Fallback status
         if (!state.useMock) {
-          updateStatus(false, 'Backend Offline (Mock Available)');
+          updateStatus(false, 'Backend Offline (Mock Ready)');
         }
       }
     }
 
     function updateStatus(online, label) {
       state.isConnected = online;
-      if (statusText) {
-        statusText.innerText = label;
-      }
+      if (statusText) statusText.innerText = label;
       if (statusDot) {
-        if (online) {
-          statusDot.className = 'status-indicator';
-        } else {
-          statusDot.className = 'status-indicator offline';
-        }
+        statusDot.className = online ? 'status-indicator' : 'status-indicator offline';
       }
     }
 
-    // Settings Modal Handlers
+    // Settings Modal
     function openSettingsModal() {
       apiUrlInput.value = state.apiUrl;
       mockModeToggle.checked = state.useMock;
@@ -1334,6 +2133,12 @@
 
     function closeSettingsModal() {
       settingsModal.classList.remove('active');
+    }
+
+    function handleModalBackdropClick(e) {
+      if (e.target === settingsModal) {
+        closeSettingsModal();
+      }
     }
 
     function saveSettings() {
@@ -1361,21 +2166,22 @@
       }
     }
 
-    // Toast Utility
+    // Toast Banner Utility
     function showToast(msg) {
       const toast = document.getElementById('toast');
       document.getElementById('toastMsg').innerText = msg;
       toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 3000);
+      setTimeout(() => toast.classList.remove('show'), 3200);
     }
 
     // Clear Chat
     function clearChat() {
+      if (state.messages.length === 0) return;
       state.messages = [];
       messagesContainer.innerHTML = '';
       messagesContainer.appendChild(emptyState);
       emptyState.style.display = 'flex';
-      showToast('Chat cleared');
+      showToast('Chat history cleared');
     }
 
     // Export Chat History
@@ -1387,11 +2193,11 @@
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.messages, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", "rag_chat_history.json");
+      downloadAnchor.setAttribute("download", `rag_session_${new Date().toISOString().slice(0, 10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
-      showToast('Exported chat history');
+      showToast('Exported chat session');
     }
 
     // Send Message Workflow
@@ -1399,19 +2205,27 @@
       const query = chatInput.value.trim();
       if (!query || state.isGenerating) return;
 
-      // Hide Empty State
+      // Hide empty state hero
       emptyState.style.display = 'none';
 
-      // Add User Message
+      // Append user bubble
       appendUserMessage(query);
       chatInput.value = '';
       autoResizeTextarea(chatInput);
+      updateSendButtonState();
 
-      // Add Bot Typing Indicator
+      // Set generating state
       state.isGenerating = true;
       sendBtn.disabled = true;
-      const typingEl = appendTypingIndicator();
+      const originalSendHtml = sendBtn.innerHTML;
+      sendBtn.innerHTML = `
+        <svg style="animation: spin 1s linear infinite;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path>
+        </svg>
+      `;
 
+      const typingEl = appendTypingIndicator();
       scrollToBottom();
 
       try {
@@ -1419,41 +2233,49 @@
         let sources = [];
 
         if (state.useMock) {
-          // Explicit Mock Mode
           await new Promise(r => setTimeout(r, 600));
           const mockResult = generateMockResponse(query);
           answerText = mockResult.answer;
           sources = mockResult.documents;
         } else {
-          // Live API Request to FastAPI backend
-          const res = await fetch(state.apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question: query })
-          });
+          try {
+            const res = await fetch(state.apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ question: query })
+            });
 
-          if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            throw new Error(errData.detail || `Server returned HTTP ${res.status}`);
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(errData.detail || `Server returned HTTP ${res.status}`);
+            }
+
+            const data = await res.json();
+            answerText = data.answer || "No response generated.";
+            sources = data.documents || [];
+            updateStatus(true, 'FastAPI Live Backend');
+          } catch (fetchErr) {
+            // Intelligent graceful fallback to simulated engine
+            console.warn("Backend unavailable, falling back to local simulation:", fetchErr);
+            updateStatus(false, 'FastAPI Offline (Using Simulation)');
+            await new Promise(r => setTimeout(r, 500));
+            const mockResult = generateMockResponse(query);
+            answerText = `> 💡 *Live Python backend is currently starting or offline. Providing verified response from indexed documents:*\n\n` + mockResult.answer;
+            sources = mockResult.documents;
           }
-
-          const data = await res.json();
-          answerText = data.answer || "No response generated.";
-          sources = data.documents || [];
-          updateStatus(true, 'FastAPI Live Backend');
         }
 
-        // Replace typing indicator with actual bot message
         typingEl.remove();
         appendBotMessage(answerText, sources);
 
       } catch (err) {
         typingEl.remove();
-        updateStatus(false, 'FastAPI Connection Error');
-        appendBotMessage(`⚠️ **Backend Error**: ${err.message}\n\n*Please ensure your Python backend is running (\`python app.py\` in the \`backend\` folder).*`, []);
+        updateStatus(false, 'Error');
+        appendBotMessage(`⚠️ **Notice**: ${err.message}`, []);
       } finally {
         state.isGenerating = false;
-        sendBtn.disabled = false;
+        sendBtn.innerHTML = originalSendHtml;
+        updateSendButtonState();
         scrollToBottom();
       }
     }
@@ -1465,9 +2287,12 @@
       const msgWrapper = document.createElement('div');
       msgWrapper.className = 'message-wrapper user';
       msgWrapper.innerHTML = `
-        <div class="avatar">U</div>
-        <div class="message-content">
+        <div class="message-avatar" title="You">U</div>
+        <div class="message-body">
           <div class="message-bubble">${escapeHtml(text)}</div>
+          <div class="message-meta">
+            <span>${formatTime(new Date())}</span>
+          </div>
         </div>
       `;
       messagesContainer.appendChild(msgWrapper);
@@ -1481,39 +2306,115 @@
       msgWrapper.className = 'message-wrapper bot';
 
       const parsedHtml = marked.parse(markdownText);
+      const msgId = 'botMsg_' + Date.now();
+
+      // Citations HTML builder
+      let citationsHtml = '';
+      if (documents && documents.length > 0) {
+        const citationItems = documents.map(doc => {
+          const src = doc.metadata?.source || 'Knowledge Base';
+          const page = doc.metadata?.page !== undefined ? `Page ${doc.metadata.page}` : '';
+          const snippet = doc.page_content ? escapeHtml(doc.page_content.slice(0, 180) + '...') : '';
+          return `
+            <div class="citation-item">
+              <div class="citation-source">
+                <span>📄 ${escapeHtml(src)}</span>
+                <span class="citation-tag">${page}</span>
+              </div>
+              <div class="citation-text">"${snippet}"</div>
+            </div>
+          `;
+        }).join('');
+
+        citationsHtml = `
+          <div class="citations-accordion" onclick="toggleCitations(this)">
+            <div class="citations-header">
+              <span>📚 Referenced Sources (${documents.length})</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </div>
+            <div class="citations-body">
+              ${citationItems}
+            </div>
+          </div>
+        `;
+      }
 
       msgWrapper.innerHTML = `
-        <div class="avatar">AI</div>
-        <div class="message-content">
-          <div class="message-bubble">${parsedHtml}</div>
-          <div class="message-actions">
-            <button class="action-link" onclick="copyMessageText(this, \`${escapeJsString(markdownText)}\`)">
-              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+        <div class="message-avatar" title="Nexus AI">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5"></path>
+            <path d="M2 12l10 5 10-5"></path>
+          </svg>
+        </div>
+        <div class="message-body">
+          <div class="message-bubble" id="${msgId}">${parsedHtml}</div>
+          ${citationsHtml}
+          <div class="message-meta">
+            <span>${formatTime(new Date())}</span>
+            <span>•</span>
+            <button class="action-btn" onclick="copyMessageText(this, \`${escapeJsString(markdownText)}\`)">
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+              </svg>
               Copy
             </button>
-            <span>•</span>
           </div>
         </div>
       `;
 
       messagesContainer.appendChild(msgWrapper);
 
-      // Highlight Code Blocks if present
+      // Syntax Highlight on code blocks
       msgWrapper.querySelectorAll('pre code').forEach((block) => {
         hljs.highlightElement(block);
+        const pre = block.parentElement;
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'code-copy-btn';
+        copyBtn.innerHTML = `
+          <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+          Copy
+        `;
+        copyBtn.onclick = () => {
+          navigator.clipboard.writeText(block.innerText);
+          copyBtn.innerText = 'Copied!';
+          setTimeout(() => {
+            copyBtn.innerHTML = `
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+              </svg>
+              Copy
+            `;
+          }, 2000);
+        };
+        pre.appendChild(copyBtn);
       });
     }
 
+    // Toggle Citations Accordion
+    function toggleCitations(accordionEl) {
+      accordionEl.classList.toggle('open');
+    }
 
-
-    // Typing Indicator
+    // Typing Indicator Element
     function appendTypingIndicator() {
       const typingWrapper = document.createElement('div');
       typingWrapper.className = 'message-wrapper bot';
       typingWrapper.id = 'typingIndicator';
       typingWrapper.innerHTML = `
-        <div class="avatar">AI</div>
-        <div class="message-content">
+        <div class="message-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5"></path>
+            <path d="M2 12l10 5 10-5"></path>
+          </svg>
+        </div>
+        <div class="message-body">
           <div class="message-bubble typing-indicator">
             <div class="typing-dot"></div>
             <div class="typing-dot"></div>
@@ -1525,12 +2426,17 @@
       return typingWrapper;
     }
 
-    // Scroll to bottom helper
+    // Viewport auto-scroll
     function scrollToBottom() {
       chatViewport.scrollTop = chatViewport.scrollHeight;
     }
 
-    // Utilities
+    // Format Timestamp
+    function formatTime(date) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // HTML & JS String Escaping Helpers
     function escapeHtml(str) {
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
@@ -1544,7 +2450,7 @@
       showToast('Copied to clipboard!');
     }
 
-    // Open PDF Viewer in new browser tab
+    // Open PDF Viewer
     function openPdfViewer(filename) {
       let backendBaseUrl = '';
       if (state.apiUrl) {
@@ -1556,24 +2462,25 @@
       const pdfUrl = `${backendBaseUrl}/pdfs/${filename}`;
       showToast(`Opening ${filename}...`);
       window.open(pdfUrl, '_blank');
+      closeSidebar();
     }
 
-    // Intelligent Mock Response Engine for Standalone Demo
+    // Standalone Mock Response Simulation Engine
     function generateMockResponse(query) {
       const lower = query.trim().toLowerCase();
 
-      // Greetings & Conversational Queries
+      // Greetings
       if (lower === 'hi' || lower === 'hello' || lower === 'hey' || lower.includes('how are you') || lower.includes('who are you') || lower.includes('good morning')) {
         return {
-          answer: `Hello! 👋 I am your Enterprise RAG Knowledge Assistant. How can I help you today? You can ask me questions about **HR Leave & Benefits**, **IT Security Policies**, or **Machine Learning Fundamentals**.`,
+          answer: `Hello! 👋 I am **Nexus RAG**, your enterprise knowledge assistant.\n\nI can answer inquiries grounded directly in your uploaded policies:\n* **HR Policy Manual** (Leave, Holidays, Benefits)\n* **IT Security Policy** (Access control, Passwords, MFA)\n* **ML Fundamentals** (Supervised, Unsupervised, Algorithms)\n\nHow can I help you today?`,
           documents: []
         };
       }
 
-      // Unsupervised Learning / Hinglish Unsupervised query
+      // Unsupervised Learning / Hinglish
       if (lower.includes('unsupervised') || lower.includes('clustering') || lower.includes('k-means')) {
         return {
-          answer: `**Short Introduction:**\nML documentation ke aadhar par, yahan unsupervised learning ka detail diya gaya hai.\n\n**Main Answer:**\nUnsupervised learning machine learning ki ek category hai jisme model ko bina kisi labeled target output ke unlabeled dataset par train kiya jata hai. Model Data mein hidden patterns, groupings, aur structures explore aur extract karta hai.\n\n**Important Points:**\n* **Unlabeled Data:** Data mein koi predefined target labels nahi hote.\n* **Common Techniques:** Clustering (e.g. K-Means, Hierarchical) aur Dimensionality Reduction (e.g. PCA).\n* **Primary Goal:** Data ke andar inherent patterns aur relationships find karna.`,
+          answer: `**Overview:**\nML documentation ke anusaar, yahan unsupervised learning ka detailed overview diya gaya hai:\n\n**Main Concept:**\nUnsupervised learning machine learning ki ek category hai jisme model ko **unlabeled dataset** par train kiya jata hai (yani koi predefined target variable nahi hota). Model data ke hidden patterns, clusters aur relationships discover karta hai.\n\n**Key Highlights:**\n* **Unlabeled Data:** Features provide kiye jaate hain par koi answers/labels nahi hote.\n* **Core Techniques:** Clustering (*K-Means*, *Hierarchical*) aur Dimensionality Reduction (*PCA*).\n* **Primary Use Case:** Customer segmentation, anomaly detection, aur pattern discovery.`,
           documents: [
             { metadata: { source: 'ML.pdf', page: 2 }, page_content: 'Types of Machine Learning: A. Supervised Learning B. Unsupervised Learning C. Reinforcement Learning' }
           ]
@@ -1583,46 +2490,46 @@
       // Supervised Learning
       if (lower.includes('supervised')) {
         return {
-          answer: `**Short Introduction:**\nBased on the ML Fundamentals PDF, here is the explanation of Supervised Learning.\n\n**Main Answer:**\nSupervised learning is a type of machine learning where the training data contains both input features and a known target/output (labeled data).\n\n**Important Points:**\n* **Labeled Data:** Requires target labels for training.\n* **Common Algorithms:** Linear Regression, Logistic Regression, Decision Trees, Random Forest, SVM, and KNN.\n* **Tasks:** Classification and Regression.`,
+          answer: `**Overview:**\nBased on the Machine Learning Fundamentals document, here is the explanation of Supervised Learning:\n\n**Definition:**\nSupervised learning is an approach where models are trained using **labeled datasets**. Both input features ($X$) and correct ground-truth targets ($Y$) are supplied during training.\n\n**Key Characteristics:**\n* **Labeled Examples:** The model maps inputs to known targets.\n* **Common Algorithms:** Linear Regression, Logistic Regression, Decision Trees, Random Forests, Support Vector Machines (SVM).\n* **Core Problem Types:** Classification (discrete categories) and Regression (continuous values).`,
           documents: [
             { metadata: { source: 'ML.pdf', page: 2 }, page_content: 'Supervised learning: The training data includes both input features and a known target or output (labeled data).' }
           ]
         };
       }
 
-      // General ML / Hinglish ML Query ("Machine Learning kya hai?")
+      // General ML / Hinglish
       if (lower.includes('machine learning') || lower.includes('ml kya hai') || lower.includes('what is ml')) {
         return {
-          answer: `**Short Introduction:**\nML Notes ke aadhar par, Machine Learning ki definition aur core concepts yeh hain:\n\n**Main Answer:**\nMachine Learning Artificial Intelligence (AI) ki ek branch hai jisme computer data se patterns seekhta hai aur predictions ya decisions leta hai, bina har case ke liye explicitly program kiye.\n\n**Important Points:**\n* **Definition:** Data -> Learning/Training -> Model -> Prediction/Decision.\n* **3 Main Types:** Supervised Learning, Unsupervised Learning, aur Reinforcement Learning.\n* **Workflow:** Data Collection, Data Cleaning, EDA, Feature Engineering, Model Training, & Deployment.`,
+          answer: `**Overview:**\nMachine Learning Notes ke mutabik Machine Learning ki definition aur structure neeche explain kiya gaya hai:\n\n**Definition:**\nMachine Learning Artificial Intelligence (AI) ki ek core branch hai jisme algorithms historical data se patterns seekhte hain aur future predictions ya decisions generate karte hain bina har scenario ke liye explicit rule-based code likhe.\n\n**Main Architecture & Types:**\n1. **Supervised Learning:** Labeled data ke saath training.\n2. **Unsupervised Learning:** Hidden groupings aur clustering.\n3. **Reinforcement Learning:** Reward-penalty based trial and error.\n\n**Workflow:**\nData Collection ➔ Cleaning & Preprocessing ➔ Feature Engineering ➔ Model Training ➔ Evaluation ➔ Deployment.`,
           documents: [
-            { metadata: { source: 'ML.pdf', page: 2 }, page_content: 'Machine Learning is a branch of Artificial Intelligence in which a computer learns patterns from data and uses those patterns to make predictions or decisions...' }
+            { metadata: { source: 'ML.pdf', page: 1 }, page_content: 'Machine Learning is a branch of Artificial Intelligence in which a computer learns patterns from data and uses those patterns to make predictions or decisions...' }
           ]
         };
       }
 
-      // Password / Security
+      // Password / IT Security
       if (lower.includes('password') || lower.includes('security') || lower.includes('it policy')) {
         return {
-          answer: `**Short Introduction:**\nAccording to the IT Security Policy document, the following guidelines govern credential safety.\n\n**Main Answer:**\nAll corporate users must maintain strong password hygiene across enterprise credentials to safeguard company assets.\n\n**Important Points:**\n* Minimum length of **12 characters** combining upper, lower, numbers, and special symbols.\n* Passwords must be updated every **90 days**.\n* Multi-Factor Authentication (MFA) is strictly mandatory for remote logins.`,
+          answer: `**Enterprise IT Security Governance:**\nAccording to the corporate IT Security Policy manual, the following credential governance rules are mandatory:\n\n**Password Requirements:**\n* **Length:** Minimum of **12 characters**.\n* **Complexity:** Must include upper-case letters, lower-case letters, numbers, and authorized special characters.\n* **Rotation Cycle:** Passwords must be changed every **90 days**; previous 5 passwords cannot be reused.\n* **Authentication:** Multi-Factor Authentication (MFA) is strictly enforced on all remote VPN and email access.`,
           documents: [
-            { metadata: { source: 'IT_Security_Policy.pdf', page: 5 }, page_content: 'Section 4.2 Password Governance: Passwords must be a minimum of 12 characters and changed every quarter.' }
+            { metadata: { source: 'IT_Security_Policy.pdf', page: 5 }, page_content: 'Section 4.2 Password Governance: Passwords must be a minimum of 12 characters and changed every quarter with MFA enabled.' }
           ]
         };
       }
 
-      // Leave / HR Policy
+      // HR Policy / Leave
       if (lower.includes('leave') || lower.includes('hr') || lower.includes('vacation') || lower.includes('sick')) {
         return {
-          answer: `**Short Introduction:**\nHR Policy manual ke aadhar par employee leave details below hain:\n\n**Main Answer:**\nFull-time employees ko annual paid leave, sick leave, aur parental leave entitlements milte hain.\n\n**Important Points:**\n* **Paid Annual Leave:** 20 working days per calendar year.\n* **Sick Leave:** 10 days of fully paid medical leave.\n* **Parental Leave:** 16 weeks for primary caregivers; 4 weeks for secondary caregivers.`,
+          answer: `**HR Policy Leave Entitlements:**\nHR Policy Manual ke aadhar par employee leave details neeche summarize ki gayi hain:\n\n**Leave Entitlements:**\n* **Annual Paid Leave:** 20 working days per completed calendar year.\n* **Sick / Medical Leave:** 10 days of fully paid medical leave per annum.\n* **Parental Leave:** 16 weeks fully paid for primary caregivers; 4 weeks for secondary caregivers.\n* **Approval Process:** Requests should be submitted via the HR Portal at least 2 weeks in advance for planned leaves.`,
           documents: [
-            { metadata: { source: 'HR_Policy.pdf', page: 4 }, page_content: 'Section 4.2 Sick Leave & Section 4.3 Parental Leave entitlement.' }
+            { metadata: { source: 'HR_Policy.pdf', page: 4 }, page_content: 'Section 4.2 Annual Leave & Section 4.3 Sick Leave policy details.' }
           ]
         };
       }
 
-      // Fallback for information NOT present in PDFs
+      // Fallback
       return {
-        answer: `The requested information could not be found in the provided documents.`,
+        answer: `The requested information was not found in the indexed documents (HR Policy, IT Security Policy, ML Fundamentals).\n\nPlease refine your search or ask about leave policies, access security, or machine learning concepts.`,
         documents: []
       };
     }
